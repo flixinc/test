@@ -181,6 +181,7 @@
 <div class="tab-nav">
   <button class="tab-btn active" id="tab-projecten" onclick="switchTab('projecten')">Projecten</button>
   <button class="tab-btn" id="tab-locaties" onclick="switchTab('locaties')">Locaties</button>
+  <button class="tab-btn" id="tab-kalender" onclick="switchTab('kalender')">Kalender</button>
   <label class="theme-switch" title="Licht / donker thema" style="margin-left:auto;">
     <input type="checkbox" id="theme-toggle" onchange="toggleTheme(this.checked)">
     <span class="theme-track"><span class="theme-thumb"></span></span>
@@ -256,6 +257,26 @@
       <div class="spinner"></div><span>Locaties laden…</span>
     </div>
   </div>
+</div>
+
+<!-- ── View: Kalender ────────────────────────────────────── -->
+<div id="view-kalender" style="display:none">
+  <div class="kal-toolbar">
+    <button class="kal-nav-btn" onclick="kalNavigeer(-1)">←</button>
+    <div class="kal-titel" id="kal-titel"></div>
+    <button class="kal-nav-btn" onclick="kalNavigeer(1)">→</button>
+    <button class="kal-vandaag-btn" onclick="kalNaarVandaag()">Vandaag</button>
+  </div>
+  <div class="kal-week-headers">
+    <div class="kal-dag-header">Ma</div>
+    <div class="kal-dag-header">Di</div>
+    <div class="kal-dag-header">Wo</div>
+    <div class="kal-dag-header">Do</div>
+    <div class="kal-dag-header">Vr</div>
+    <div class="kal-dag-header">Za</div>
+    <div class="kal-dag-header">Zo</div>
+  </div>
+  <div class="kal-grid" id="kal-grid"></div>
 </div>
 
 <!-- ── Project Modal ─────────────────────────────────────── -->
