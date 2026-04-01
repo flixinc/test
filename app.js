@@ -677,14 +677,17 @@ let locatiesInitialized = false;
 function switchTab(tab) {
   activeTab = tab;
   document.getElementById('view-projecten').style.display = tab === 'projecten' ? '' : 'none';
+  document.getElementById('view-kalender').style.display  = tab === 'kalender'   ? '' : 'none';
   const locView = document.getElementById('view-locaties');
   locView.classList.toggle('active', tab === 'locaties');
   document.getElementById('tab-projecten').classList.toggle('active', tab === 'projecten');
   document.getElementById('tab-locaties').classList.toggle('active', tab === 'locaties');
+  document.getElementById('tab-kalender').classList.toggle('active', tab === 'kalender');
   if (tab === 'locaties') {
     if (!locatiesInitialized) { locatiesInitialized = true; setTimeout(initLocatiesTab, 50); }
     else if (locatieMap) { setTimeout(() => locatieMap.invalidateSize(), 50); }
   }
+  if (tab === 'kalender') renderKalender();
 }
 
 // ── Locaties + Kaart ──────────────────────────────────────
@@ -1199,6 +1202,96 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/compier-dashboard/sw.js').catch(() => {});
   });
+}
+
+// ── Kalender ──────────────────────────────────────────────
+const KAL_MAANDEN = ['Januari','Februari','Maart','April','Mei','Juni','Juli','Augustus','September','Oktober','November','December'];
+const KAL_STATUS_KLEUR = {
+  offerte: '#4a90d9', lopend: '#4caf6e',
+  wacht: '#d4a017', 'wacht-reactie': '#d4a017', 'wacht-akkoord': '#d4a017',
+  klaar: '#555'
+};
+
+let kalJaar  = new Date().getFullYear();
+let kalMaand = new Date().getMonth();
+
+function renderKalender() {
+  document.getElementById('kal-titel').textContent = KAL_MAANDEN[kalMaand] + ' ' + kalJaar;
+  const grid    = document.getElementById('kal-grid');
+  const vandaag = new Date(); vandaag.setHours(0,0,0,0);
+
+  // Eerste dag van de maand → omzetten naar Ma=0, Zo=6
+  const eerstedag        = new Date(kalJaar, kalMaand, 1);
+  const startdag         = (eerstedag.getDay() + 6) % 7;
+  const dagenInMaand     = new Date(kalJaar, kalMaand + 1, 0).getDate();
+  const dagenVorigeMaand = new Date(kalJaar, kalMaand, 0).getDate();
+
+  // Projecten met datum in deze maand per dag clusteren
+  const perDag = {};
+  projecten.forEach(p => {
+    if (!p.datum) return;
+    const d = new Date(p.datum);
+    if (d.getFullYear() === kalJaar && d.getMonth() === kalMaand) {
+      const dag = d.getDate();
+      if (!perDag[dag]) perDag[dag] = [];
+      perDag[dag].push(p);
+    }
+  });
+
+  // Controleer of er überhaupt projecten zijn deze maand
+  const heeftProjecten = Object.keys(perDag).length > 0;
+
+  // 42 cellen = 6 weken
+  let html = '';
+  for (let i = 0; i < 42; i++) {
+    const dagNr          = i - startdag + 1;
+    const isVorig        = dagNr < 1;
+    const isVolgend      = dagNr > dagenInMaand;
+    const weergave       = isVorig ? dagenVorigeMaand + dagNr : isVolgend ? dagNr - dagenInMaand : dagNr;
+    const isVandaag      = !isVorig && !isVolgend &&
+      new Date(kalJaar, kalMaand, dagNr).getTime() === vandaag.getTime();
+    const klassen        = ['kal-dag', isVorig || isVolgend ? 'ander-maand' : '', isVandaag ? 'vandaag' : '']
+      .filter(Boolean).join(' ');
+    const dagProjecten   = (!isVorig && !isVolgend) ? (perDag[dagNr] || []) : [];
+
+    const projectHtml = dagProjecten.map(p => {
+      const tijd = p.datum?.includes('T') ? p.datum.slice(11, 16) : '';
+      const kleur = KAL_STATUS_KLEUR[p.status] || '#666';
+      return `<div class="kal-project" onclick="event.stopPropagation();openModal(${p.id})">
+        <div class="kal-project-dot" style="background:${kleur}"></div>
+        <div class="kal-project-text">
+          <div class="kal-project-num">${p.nummer}</div>
+          ${p.actie ? `<div class="kal-project-actie">${p.actie}</div>` : ''}
+        </div>
+        ${tijd ? `<div class="kal-project-tijd">${tijd}</div>` : ''}
+      </div>`;
+    }).join('');
+
+    html += `<div class="${klassen}">
+      <div class="kal-dag-num">${weergave}</div>
+      ${projectHtml}
+    </div>`;
+  }
+
+  if (!heeftProjecten) {
+    html += `<div class="kal-leeg">Geen projecten met datum in ${KAL_MAANDEN[kalMaand]}</div>`;
+  }
+
+  grid.innerHTML = html;
+}
+
+function kalNavigeer(delta) {
+  kalMaand += delta;
+  if (kalMaand > 11) { kalMaand = 0; kalJaar++; }
+  if (kalMaand < 0)  { kalMaand = 11; kalJaar--; }
+  renderKalender();
+}
+
+function kalNaarVandaag() {
+  const nu = new Date();
+  kalJaar  = nu.getFullYear();
+  kalMaand = nu.getMonth();
+  renderKalender();
 }
 
 // ── Init ──────────────────────────────────────────────────
