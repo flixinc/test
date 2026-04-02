@@ -1263,10 +1263,10 @@ function renderKalender() {
       return `<div class="kal-project" onclick="event.stopPropagation();openModal(${p.id})">
         <div class="kal-project-dot" style="background:${kleur}"></div>
         <div class="kal-project-text">
-          <div class="kal-project-num">${p.nummer}</div>
+          <div class="kal-project-num">${p.nummer}${tijd ? `<span class="kal-project-tijd">${tijd}</span>` : ''}</div>
+          ${p.adres ? `<div class="kal-project-adres">${p.adres}</div>` : ''}
           ${p.actie ? `<div class="kal-project-actie">${p.actie}</div>` : ''}
         </div>
-        ${tijd ? `<div class="kal-project-tijd">${tijd}</div>` : ''}
       </div>`;
     }).join('');
 

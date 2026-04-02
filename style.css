@@ -709,6 +709,11 @@ textarea { resize: vertical; min-height: 56px; }
 .kal-project-num {
   font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600;
   color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  display: flex; align-items: center; justify-content: space-between; gap: 4px;
+}
+.kal-project-adres {
+  font-size: 9px; color: var(--text); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; opacity: .75; margin-bottom: 1px;
 }
 .kal-project-actie {
   font-size: 9px; color: var(--muted); white-space: nowrap;
@@ -716,7 +721,7 @@ textarea { resize: vertical; min-height: 56px; }
 }
 .kal-project-tijd {
   font-family: 'IBM Plex Mono', monospace; font-size: 9px;
-  color: var(--orange); flex-shrink: 0; margin-top: 1px;
+  color: var(--orange); flex-shrink: 0; margin-top: 0;
 }
 .kal-leeg {
   grid-column: 1 / -1; text-align: center;
