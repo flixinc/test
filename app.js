@@ -1,6 +1,6 @@
 /* ============================================================
    COMPIER Dashboard — App logica
-   v1.8 | 2026-03-25
+   v1.9 | 2026-04-02
    ============================================================ */
 
 // ── Constanten ────────────────────────────────────────────
@@ -376,7 +376,10 @@ function render() {
       <div class="card-client">${p.opdrachtgever}${p.contact ? ' · ' + p.contact.split('—')[0].trim() : ''}</div>
       ${p.notitie ? `<div class="card-actie" style="color:var(--muted);font-size:12px;margin-bottom:6px">${p.notitie.substring(0,80)}…</div>` : ''}
       ${p.status !== 'klaar' && p.actie ? `<div class="card-actie">${p.actie}</div>` : ''}
-      ${p.status !== 'klaar' && p.datum ? `<div class="card-date ${dateClass(p.datum)}">${fmt(p.datum)}</div>` : ''}
+      ${(p.status !== 'klaar' && p.datum) || p.ruimte ? `<div class="card-footer">
+        ${p.status !== 'klaar' && p.datum ? `<span class="card-date ${dateClass(p.datum)}">${fmt(p.datum)}</span>` : '<span></span>'}
+        ${p.ruimte ? `<span class="card-ruimte">${p.ruimte}</span>` : ''}
+      </div>` : ''}
     </div>`).join('') || '<div style="color:var(--muted);font-size:13px;padding:20px 0">Geen projecten gevonden.</div>';
 }
 
