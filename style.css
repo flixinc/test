@@ -682,45 +682,45 @@ textarea { resize: vertical; min-height: 56px; }
   display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
 }
 .kal-dag {
-  min-height: 90px; background: var(--surface); border: 1px solid var(--border);
-  border-radius: 5px; padding: 6px; overflow: hidden;
+  min-height: 110px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 5px; padding: 8px; overflow: hidden;
 }
 .kal-dag.vandaag { border-color: var(--orange); }
 .kal-dag.ander-maand { opacity: .3; pointer-events: none; }
 .kal-dag-num {
-  font-size: 11px; font-weight: 600; color: var(--muted);
-  margin-bottom: 5px; line-height: 1;
+  font-size: 12px; font-weight: 600; color: var(--muted);
+  margin-bottom: 6px; line-height: 1;
 }
 .kal-dag.vandaag .kal-dag-num {
   color: var(--orange); background: rgba(var(--orange-rgb),.15);
   display: inline-flex; align-items: center; justify-content: center;
-  width: 20px; height: 20px; border-radius: 50%; margin-bottom: 4px;
+  width: 22px; height: 22px; border-radius: 50%; margin-bottom: 5px;
 }
 .kal-project {
-  display: flex; align-items: flex-start; gap: 4px; padding: 3px 5px;
-  border-radius: 3px; cursor: pointer; margin-bottom: 3px;
+  display: flex; align-items: flex-start; gap: 5px; padding: 4px 6px;
+  border-radius: 3px; cursor: pointer; margin-bottom: 4px;
   background: var(--surface2); transition: background .12s;
 }
 .kal-project:hover { background: rgba(var(--orange-rgb),.12); }
 .kal-project-dot {
-  width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; margin-top: 3px;
+  width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 4px;
 }
 .kal-project-text { overflow: hidden; flex: 1; min-width: 0; }
 .kal-project-num {
-  font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600;
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600;
   color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   display: flex; align-items: center; justify-content: space-between; gap: 4px;
 }
 .kal-project-adres {
-  font-size: 9px; color: var(--text); white-space: nowrap;
+  font-size: 10px; color: var(--text); white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis; opacity: .75; margin-bottom: 1px;
 }
 .kal-project-actie {
-  font-size: 9px; color: var(--muted); white-space: nowrap;
+  font-size: 10px; color: var(--muted); white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis;
 }
 .kal-project-tijd {
-  font-family: 'IBM Plex Mono', monospace; font-size: 9px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 10px;
   color: var(--orange); flex-shrink: 0; margin-top: 0;
 }
 .kal-leeg {
