@@ -1427,20 +1427,34 @@ function deelKaart() {
 
   // Naar PNG en openen in nieuw tabblad (iOS: lang indrukken → opslaan/delen)
   const imgUrl = canvas.toDataURL('image/png');
+  const bgPagina = isLight ? '#f0f0ee' : '#0f0f0f';
   const win = window.open('', '_blank');
   if (win) {
     win.document.write(`<!DOCTYPE html><html><head>
       <meta name="viewport" content="width=device-width,initial-scale=1">
       <title>${p.nummer}</title>
       <style>
-        body { margin:0; background:#0f0f0f; display:flex; flex-direction:column;
-               align-items:center; justify-content:center; min-height:100vh; gap:16px; }
-        img { width:390px; max-width:95vw; border-radius:12px;
-              box-shadow:0 8px 32px rgba(0,0,0,.8); }
-        p { color:#666; font-family:sans-serif; font-size:12px; margin:0; }
+        * { box-sizing:border-box; margin:0; padding:0; }
+        body { background:${bgPagina}; display:flex; flex-direction:column;
+               align-items:center; justify-content:center; min-height:100vh;
+               gap:20px; padding:24px 16px; font-family:'IBM Plex Sans',sans-serif; }
+        img { width:390px; max-width:100%; border-radius:12px;
+              box-shadow:0 8px 32px rgba(0,0,0,.4); }
+        .hint { color:#666; font-size:12px; text-align:center; }
+        .terug {
+          display:inline-flex; align-items:center; gap:6px;
+          padding:10px 20px; border-radius:6px;
+          background:${isLight ? '#e6e6e4' : '#1e1e1e'};
+          border:1px solid ${isLight ? '#d0d0ce' : '#2a2a2a'};
+          color:${isLight ? '#1a1a1a' : '#e8e8e8'};
+          font-size:13px; font-weight:600; cursor:pointer;
+          text-decoration:none; letter-spacing:0.02em;
+        }
+        .terug:hover { border-color:#E8611A; color:#E8611A; }
       </style></head><body>
       <img src="${imgUrl}" alt="${p.nummer}">
-      <p>Houd de afbeelding ingedrukt om op te slaan of te delen</p>
+      <p class="hint">Houd de afbeelding ingedrukt om op te slaan of te delen</p>
+      <a class="terug" onclick="window.close()" href="#">← Terug naar dashboard</a>
     </body></html>`);
     win.document.close();
   }
