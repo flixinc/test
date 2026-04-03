@@ -1303,19 +1303,7 @@ function deelKaart() {
   const p = projecten.find(x => x.id === editingId);
   if (!p) return;
 
-  const W = 390, H = 290;
-  const canvas = document.createElement('canvas');
-  canvas.width = W * 2; canvas.height = H * 2;
-  const ctx = canvas.getContext('2d');
-  ctx.scale(2, 2);
-
-  const STATUS_KLEUR = {
-    offerte: '#4a90d9', lopend: '#4caf6e',
-    wacht: '#d4a017', 'wacht-reactie': '#d4a017', 'wacht-akkoord': '#d4a017',
-    klaar: '#555'
-  };
-  const kleur  = STATUS_KLEUR[p.status] || '#666';
-  const ORANGE = getComputedStyle(document.documentElement).getPropertyValue('--orange').trim() || '#E8611A';
+  const ORANGE  = getComputedStyle(document.documentElement).getPropertyValue('--orange').trim() || '#E8611A';
   const isLight = document.body.classList.contains('light');
   const C = {
     bg:      isLight ? '#ffffff' : '#111111',
@@ -1328,6 +1316,41 @@ function deelKaart() {
     notitie: isLight ? '#444444' : '#aaaaaa',
     ruimte:  isLight ? '#555555' : '#999999',
   };
+
+  // ── Bereken notitie-regels vooraf (voor dynamische hoogte) ──
+  const W = 390;
+  const REGEL_H = 17, NOTITIE_FONT = '400 12px "IBM Plex Sans", sans-serif';
+  const tmpC = document.createElement('canvas').getContext('2d');
+  tmpC.font = NOTITIE_FONT;
+  const notitieRegels = [];
+  if (p.notitie) {
+    const woorden = p.notitie.split(' ');
+    let huidig = '';
+    for (const w of woorden) {
+      const test = huidig ? huidig + ' ' + w : w;
+      if (tmpC.measureText(test).width < W - 40) {
+        huidig = test;
+      } else {
+        if (huidig) notitieRegels.push(huidig);
+        huidig = w;
+      }
+    }
+    if (huidig) notitieRegels.push(huidig);
+  } else if (p.actie) {
+    notitieRegels.push(p.actie);
+  }
+
+  // Vaste blokken + ruimte voor notitie-regels + datum + footer
+  const VASTE_TOP   = 168; // t/m OPDRACHT label
+  const NOTITIE_TOP = 184;
+  const notitieH    = Math.max(notitieRegels.length * REGEL_H, 18);
+  const DATUM_TOP   = NOTITIE_TOP + notitieH + 20; // lijn + ruimte
+  const H           = DATUM_TOP + (p.datum ? 56 : 10) + 20; // datum blok + footer
+
+  const canvas = document.createElement('canvas');
+  canvas.width = W * 2; canvas.height = H * 2;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(2, 2);
 
   // Achtergrond
   ctx.fillStyle = C.bg;
@@ -1379,49 +1402,37 @@ function deelKaart() {
   ctx.fillStyle = C.tekst;
   ctx.font = '600 9px "IBM Plex Sans", sans-serif';
   ctx.letterSpacing = '1.5px';
-  ctx.fillText('OPDRACHT', 20, 168);
+  ctx.fillText('OPDRACHT', 20, VASTE_TOP);
   ctx.letterSpacing = '0px';
 
-  // Notitie (max 2 regels)
-  if (p.notitie) {
-    const woorden = p.notitie.split(' ');
-    let r1 = '', r2 = '';
-    ctx.font = '400 12px "IBM Plex Sans", sans-serif';
-    for (const w of woorden) {
-      if (ctx.measureText(r1 + ' ' + w).width < W - 40) r1 += (r1 ? ' ' : '') + w;
-      else if (ctx.measureText(r2 + ' ' + w).width < W - 40) r2 += (r2 ? ' ' : '') + w;
-      else break;
-    }
-    ctx.fillStyle = C.notitie;
-    if (r1) ctx.fillText(r1, 20, 186);
-    if (r2) ctx.fillText(r2 + (p.notitie.length > r1.length + r2.length + 2 ? '…' : ''), 20, 202);
-  } else if (p.actie) {
-    ctx.fillStyle = C.notitie;
-    ctx.font = '400 12px "IBM Plex Sans", sans-serif';
-    ctx.fillText(p.actie, 20, 186);
-  }
+  // Notitie — alle regels
+  ctx.fillStyle = C.notitie;
+  ctx.font = NOTITIE_FONT;
+  notitieRegels.forEach((r, i) => {
+    ctx.fillText(r, 20, NOTITIE_TOP + i * REGEL_H);
+  });
 
-  // Lijn
+  // Lijn vóór datum
   ctx.strokeStyle = C.lijn;
-  ctx.beginPath(); ctx.moveTo(20, 218); ctx.lineTo(W - 16, 218); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(20, DATUM_TOP - 10); ctx.lineTo(W - 16, DATUM_TOP - 10); ctx.stroke();
 
   // Datum
   if (p.datum) {
-    const d = new Date(p.datum);
-    const dag   = d.toLocaleDateString('nl-NL', { weekday: 'long' });
-    const datum = d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' });
-    const tijd  = p.datum.includes('T') ? p.datum.slice(11, 16) : null;
+    const d    = new Date(p.datum);
+    const dag  = d.toLocaleDateString('nl-NL', { weekday: 'long' });
+    const dat  = d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' });
+    const tijd = p.datum.includes('T') ? p.datum.slice(11, 16) : null;
     ctx.fillStyle = C.tekst;
     ctx.font = '600 9px "IBM Plex Sans", sans-serif';
     ctx.letterSpacing = '1.5px';
-    ctx.fillText('DATUM', 20, 234);
+    ctx.fillText('DATUM', 20, DATUM_TOP + 6);
     ctx.letterSpacing = '0px';
     ctx.fillStyle = ORANGE;
     ctx.font = '600 13px "IBM Plex Mono", monospace';
-    ctx.fillText(dag.charAt(0).toUpperCase() + dag.slice(1) + ' — ' + datum + (tijd ? '  ' + tijd : ''), 20, 252);
+    ctx.fillText(dag.charAt(0).toUpperCase() + dag.slice(1) + ' — ' + dat + (tijd ? '  ' + tijd : ''), 20, DATUM_TOP + 24);
   }
 
-  // Subtiele footer balk
+  // Footer balk
   ctx.fillStyle = C.footer;
   ctx.beginPath(); ctx.roundRect(0, H - 20, W, 20, [0, 0, 12, 12]); ctx.fill();
 
