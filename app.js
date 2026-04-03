@@ -1314,11 +1314,23 @@ function deelKaart() {
     wacht: '#d4a017', 'wacht-reactie': '#d4a017', 'wacht-akkoord': '#d4a017',
     klaar: '#555'
   };
-  const kleur = STATUS_KLEUR[p.status] || '#666';
-  const ORANGE = '#E8611A';
+  const kleur  = STATUS_KLEUR[p.status] || '#666';
+  const ORANGE = getComputedStyle(document.documentElement).getPropertyValue('--orange').trim() || '#E8611A';
+  const isLight = document.body.classList.contains('light');
+  const C = {
+    bg:      isLight ? '#ffffff' : '#111111',
+    footer:  isLight ? '#f0f0ee' : '#1a1a1a',
+    lijn:    isLight ? '#d0d0ce' : '#2a2a2a',
+    chip:    isLight ? '#e6e6e4' : '#222222',
+    chipRnd: isLight ? '#d0d0ce' : '#333333',
+    tekst:   isLight ? '#1a1a1a' : '#e8e8e8',
+    muted:   isLight ? '#888888' : '#555555',
+    notitie: isLight ? '#444444' : '#aaaaaa',
+    ruimte:  isLight ? '#555555' : '#999999',
+  };
 
   // Achtergrond
-  ctx.fillStyle = '#111111';
+  ctx.fillStyle = C.bg;
   ctx.beginPath(); ctx.roundRect(0, 0, W, H, 12); ctx.fill();
 
   // Oranje balk links
@@ -1331,7 +1343,7 @@ function deelKaart() {
   ctx.fillText('COMPIER', 20, 26);
 
   // Lijn
-  ctx.strokeStyle = '#2a2a2a'; ctx.lineWidth = 1;
+  ctx.strokeStyle = C.lijn; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(20, 36); ctx.lineTo(W - 16, 36); ctx.stroke();
 
   // Projectnummer
@@ -1343,28 +1355,28 @@ function deelKaart() {
   if (p.ruimte) {
     ctx.font = '600 10px "IBM Plex Mono", monospace';
     const rw = ctx.measureText(p.ruimte).width + 14;
-    ctx.fillStyle = '#222';
+    ctx.fillStyle = C.chip;
     ctx.beginPath(); ctx.roundRect(20, 80, rw, 18, 3); ctx.fill();
-    ctx.strokeStyle = '#333'; ctx.lineWidth = 1;
+    ctx.strokeStyle = C.chipRnd; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.roundRect(20, 80, rw, 18, 3); ctx.stroke();
-    ctx.fillStyle = '#999';
+    ctx.fillStyle = C.ruimte;
     ctx.fillText(p.ruimte, 27, 92.5);
   }
 
   // Adres
-  ctx.fillStyle = '#e8e8e8';
+  ctx.fillStyle = C.tekst;
   ctx.font = '600 14px "IBM Plex Sans", sans-serif';
   ctx.fillText(p.adres || '—', 20, 122);
-  ctx.fillStyle = '#555';
+  ctx.fillStyle = C.muted;
   ctx.font = '400 11px "IBM Plex Sans", sans-serif';
   ctx.fillText(p.opdrachtgever || '', 20, 140);
 
   // Lijn
-  ctx.strokeStyle = '#2a2a2a';
+  ctx.strokeStyle = C.lijn;
   ctx.beginPath(); ctx.moveTo(20, 152); ctx.lineTo(W - 16, 152); ctx.stroke();
 
-  // Opdracht label — wit
-  ctx.fillStyle = '#e8e8e8';
+  // Opdracht label
+  ctx.fillStyle = C.tekst;
   ctx.font = '600 9px "IBM Plex Sans", sans-serif';
   ctx.letterSpacing = '1.5px';
   ctx.fillText('OPDRACHT', 20, 168);
@@ -1380,17 +1392,17 @@ function deelKaart() {
       else if (ctx.measureText(r2 + ' ' + w).width < W - 40) r2 += (r2 ? ' ' : '') + w;
       else break;
     }
-    ctx.fillStyle = '#aaa';
+    ctx.fillStyle = C.notitie;
     if (r1) ctx.fillText(r1, 20, 186);
     if (r2) ctx.fillText(r2 + (p.notitie.length > r1.length + r2.length + 2 ? '…' : ''), 20, 202);
   } else if (p.actie) {
-    ctx.fillStyle = '#aaa';
+    ctx.fillStyle = C.notitie;
     ctx.font = '400 12px "IBM Plex Sans", sans-serif';
     ctx.fillText(p.actie, 20, 186);
   }
 
   // Lijn
-  ctx.strokeStyle = '#2a2a2a';
+  ctx.strokeStyle = C.lijn;
   ctx.beginPath(); ctx.moveTo(20, 218); ctx.lineTo(W - 16, 218); ctx.stroke();
 
   // Datum
@@ -1399,7 +1411,7 @@ function deelKaart() {
     const dag   = d.toLocaleDateString('nl-NL', { weekday: 'long' });
     const datum = d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' });
     const tijd  = p.datum.includes('T') ? p.datum.slice(11, 16) : null;
-    ctx.fillStyle = '#e8e8e8';
+    ctx.fillStyle = C.tekst;
     ctx.font = '600 9px "IBM Plex Sans", sans-serif';
     ctx.letterSpacing = '1.5px';
     ctx.fillText('DATUM', 20, 234);
@@ -1410,7 +1422,7 @@ function deelKaart() {
   }
 
   // Subtiele footer balk
-  ctx.fillStyle = '#1a1a1a';
+  ctx.fillStyle = C.footer;
   ctx.beginPath(); ctx.roundRect(0, H - 20, W, 20, [0, 0, 12, 12]); ctx.fill();
 
   // Naar PNG en openen in nieuw tabblad (iOS: lang indrukken → opslaan/delen)
