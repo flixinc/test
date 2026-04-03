@@ -433,6 +433,7 @@ function openModal(id) {
   document.getElementById('upload-section').style.display = isNew ? 'block' : 'none';
   document.getElementById('modal-title').textContent = isNew ? 'NIEUWE OPDRACHT' : 'OPDRACHT BEWERKEN';
   document.getElementById('btn-delete').style.display = isNew ? 'none' : 'block';
+  document.getElementById('btn-deel').style.display   = isNew ? 'none' : 'block';
   document.getElementById('ai-result').className = 'ai-result';
   document.getElementById('ai-loading').classList.remove('show');
   if (id) {
@@ -1295,6 +1296,142 @@ function kalNaarVandaag() {
   kalJaar  = nu.getFullYear();
   kalMaand = nu.getMonth();
   renderKalender();
+}
+
+// ── Deel kaart ────────────────────────────────────────────
+function deelKaart() {
+  const p = projecten.find(x => x.id === editingId);
+  if (!p) return;
+
+  const W = 390, H = 290;
+  const canvas = document.createElement('canvas');
+  canvas.width = W * 2; canvas.height = H * 2;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(2, 2);
+
+  const STATUS_KLEUR = {
+    offerte: '#4a90d9', lopend: '#4caf6e',
+    wacht: '#d4a017', 'wacht-reactie': '#d4a017', 'wacht-akkoord': '#d4a017',
+    klaar: '#555'
+  };
+  const kleur = STATUS_KLEUR[p.status] || '#666';
+  const ORANGE = '#E8611A';
+
+  // Achtergrond
+  ctx.fillStyle = '#111111';
+  ctx.beginPath(); ctx.roundRect(0, 0, W, H, 12); ctx.fill();
+
+  // Oranje balk links
+  ctx.fillStyle = ORANGE;
+  ctx.beginPath(); ctx.roundRect(0, 0, 4, H, [12, 0, 0, 12]); ctx.fill();
+
+  // Header: COMPIER
+  ctx.fillStyle = ORANGE;
+  ctx.font = '700 11px "IBM Plex Mono", monospace';
+  ctx.fillText('COMPIER', 20, 26);
+
+  // Lijn
+  ctx.strokeStyle = '#2a2a2a'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(20, 36); ctx.lineTo(W - 16, 36); ctx.stroke();
+
+  // Projectnummer
+  ctx.fillStyle = ORANGE;
+  ctx.font = '700 26px "IBM Plex Mono", monospace';
+  ctx.fillText(p.nummer, 20, 72);
+
+  // Ruimte chip
+  if (p.ruimte) {
+    ctx.font = '600 10px "IBM Plex Mono", monospace';
+    const rw = ctx.measureText(p.ruimte).width + 14;
+    ctx.fillStyle = '#222';
+    ctx.beginPath(); ctx.roundRect(20, 80, rw, 18, 3); ctx.fill();
+    ctx.strokeStyle = '#333'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.roundRect(20, 80, rw, 18, 3); ctx.stroke();
+    ctx.fillStyle = '#999';
+    ctx.fillText(p.ruimte, 27, 92.5);
+  }
+
+  // Adres
+  ctx.fillStyle = '#e8e8e8';
+  ctx.font = '600 14px "IBM Plex Sans", sans-serif';
+  ctx.fillText(p.adres || '—', 20, 122);
+  ctx.fillStyle = '#555';
+  ctx.font = '400 11px "IBM Plex Sans", sans-serif';
+  ctx.fillText(p.opdrachtgever || '', 20, 140);
+
+  // Lijn
+  ctx.strokeStyle = '#2a2a2a';
+  ctx.beginPath(); ctx.moveTo(20, 152); ctx.lineTo(W - 16, 152); ctx.stroke();
+
+  // Opdracht label — wit
+  ctx.fillStyle = '#e8e8e8';
+  ctx.font = '600 9px "IBM Plex Sans", sans-serif';
+  ctx.letterSpacing = '1.5px';
+  ctx.fillText('OPDRACHT', 20, 168);
+  ctx.letterSpacing = '0px';
+
+  // Notitie (max 2 regels)
+  if (p.notitie) {
+    const woorden = p.notitie.split(' ');
+    let r1 = '', r2 = '';
+    ctx.font = '400 12px "IBM Plex Sans", sans-serif';
+    for (const w of woorden) {
+      if (ctx.measureText(r1 + ' ' + w).width < W - 40) r1 += (r1 ? ' ' : '') + w;
+      else if (ctx.measureText(r2 + ' ' + w).width < W - 40) r2 += (r2 ? ' ' : '') + w;
+      else break;
+    }
+    ctx.fillStyle = '#aaa';
+    if (r1) ctx.fillText(r1, 20, 186);
+    if (r2) ctx.fillText(r2 + (p.notitie.length > r1.length + r2.length + 2 ? '…' : ''), 20, 202);
+  } else if (p.actie) {
+    ctx.fillStyle = '#aaa';
+    ctx.font = '400 12px "IBM Plex Sans", sans-serif';
+    ctx.fillText(p.actie, 20, 186);
+  }
+
+  // Lijn
+  ctx.strokeStyle = '#2a2a2a';
+  ctx.beginPath(); ctx.moveTo(20, 218); ctx.lineTo(W - 16, 218); ctx.stroke();
+
+  // Datum
+  if (p.datum) {
+    const d = new Date(p.datum);
+    const dag   = d.toLocaleDateString('nl-NL', { weekday: 'long' });
+    const datum = d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' });
+    const tijd  = p.datum.includes('T') ? p.datum.slice(11, 16) : null;
+    ctx.fillStyle = '#e8e8e8';
+    ctx.font = '600 9px "IBM Plex Sans", sans-serif';
+    ctx.letterSpacing = '1.5px';
+    ctx.fillText('DATUM', 20, 234);
+    ctx.letterSpacing = '0px';
+    ctx.fillStyle = ORANGE;
+    ctx.font = '600 13px "IBM Plex Mono", monospace';
+    ctx.fillText(dag.charAt(0).toUpperCase() + dag.slice(1) + ' — ' + datum + (tijd ? '  ' + tijd : ''), 20, 252);
+  }
+
+  // Subtiele footer balk
+  ctx.fillStyle = '#1a1a1a';
+  ctx.beginPath(); ctx.roundRect(0, H - 20, W, 20, [0, 0, 12, 12]); ctx.fill();
+
+  // Naar PNG en openen in nieuw tabblad (iOS: lang indrukken → opslaan/delen)
+  const imgUrl = canvas.toDataURL('image/png');
+  const win = window.open('', '_blank');
+  if (win) {
+    win.document.write(`<!DOCTYPE html><html><head>
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <title>${p.nummer}</title>
+      <style>
+        body { margin:0; background:#0f0f0f; display:flex; flex-direction:column;
+               align-items:center; justify-content:center; min-height:100vh; gap:16px; }
+        img { width:390px; max-width:95vw; border-radius:12px;
+              box-shadow:0 8px 32px rgba(0,0,0,.8); }
+        p { color:#666; font-family:sans-serif; font-size:12px; margin:0; }
+      </style></head><body>
+      <img src="${imgUrl}" alt="${p.nummer}">
+      <p>Houd de afbeelding ingedrukt om op te slaan of te delen</p>
+    </body></html>`);
+    win.document.close();
+  }
 }
 
 // ── Init ──────────────────────────────────────────────────
