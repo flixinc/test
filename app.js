@@ -1345,7 +1345,7 @@ function deelKaart() {
   const NOTITIE_TOP = 184;
   const notitieH    = Math.max(notitieRegels.length * REGEL_H, 18);
   const DATUM_TOP   = NOTITIE_TOP + notitieH + 20; // lijn + ruimte
-  const H           = DATUM_TOP + (p.datum ? 56 : 10) + 20; // datum blok + footer
+  const H           = DATUM_TOP + (p.datum ? 56 : 10) + 32; // datum blok + onderste padding
 
   const canvas = document.createElement('canvas');
   canvas.width = W * 2; canvas.height = H * 2;
@@ -1355,10 +1355,6 @@ function deelKaart() {
   // Achtergrond
   ctx.fillStyle = C.bg;
   ctx.beginPath(); ctx.roundRect(0, 0, W, H, 12); ctx.fill();
-
-  // Oranje balk links
-  ctx.fillStyle = ORANGE;
-  ctx.beginPath(); ctx.roundRect(0, 0, 4, H, [12, 0, 0, 12]); ctx.fill();
 
   // Header: COMPIER
   ctx.fillStyle = ORANGE;
@@ -1432,9 +1428,9 @@ function deelKaart() {
     ctx.fillText(dag.charAt(0).toUpperCase() + dag.slice(1) + ' — ' + dat + (tijd ? '  ' + tijd : ''), 20, DATUM_TOP + 24);
   }
 
-  // Footer balk
-  ctx.fillStyle = C.footer;
-  ctx.beginPath(); ctx.roundRect(0, H - 20, W, 20, [0, 0, 12, 12]); ctx.fill();
+  // Oranje balk links — als laatste getekend zodat hij altijd schoon bovenop staat
+  ctx.fillStyle = ORANGE;
+  ctx.beginPath(); ctx.roundRect(0, 0, 4, H, [12, 0, 0, 12]); ctx.fill();
 
   // Naar PNG en openen in nieuw tabblad (iOS: lang indrukken → opslaan/delen)
   const imgUrl = canvas.toDataURL('image/png');
