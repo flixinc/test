@@ -604,10 +604,11 @@ textarea { resize: vertical; min-height: 56px; }
 /* ── Schilder badge & toggle ────────────────────────────── */
 .schilder-badge {
   display: inline-flex; align-items: center; gap: 3px;
-  background: rgba(142, 107, 191, 0.15); color: var(--purple);
-  border: 1px solid rgba(142, 107, 191, 0.3);
+  background: var(--surface2); color: var(--muted);
+  border: 1px solid var(--border);
   border-radius: 3px; padding: 2px 7px;
-  font-size: 10px; font-weight: 600; letter-spacing: 0.03em; white-space: nowrap;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.04em; white-space: nowrap;
 }
 .schilder-toggle-row {
   grid-column: 1 / -1; display: flex; align-items: center; gap: 10px;
