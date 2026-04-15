@@ -601,6 +601,36 @@ textarea { resize: vertical; min-height: 56px; }
 .geo-status.hidden { opacity: 0; }
 .loc-error { padding: 16px 14px; font-size: 12px; color: var(--red); text-align: center; }
 
+/* ── Schilder badge & toggle ────────────────────────────── */
+.schilder-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  background: rgba(142, 107, 191, 0.15); color: var(--purple);
+  border: 1px solid rgba(142, 107, 191, 0.3);
+  border-radius: 3px; padding: 2px 7px;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.03em; white-space: nowrap;
+}
+.schilder-toggle-row {
+  grid-column: 1 / -1; display: flex; align-items: center; gap: 10px;
+  padding: 6px 0;
+}
+.schilder-toggle-row label:first-child {
+  font-size: 11px; color: var(--muted); text-transform: uppercase;
+  letter-spacing: 0.08em; font-weight: 500; white-space: nowrap;
+}
+.schilder-switch { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.schilder-switch input { display: none; }
+.schilder-track {
+  width: 30px; height: 16px; background: var(--border); border-radius: 8px;
+  position: relative; display: block; transition: background 0.2s; flex-shrink: 0;
+}
+.schilder-switch input:checked + .schilder-track { background: var(--purple); }
+.schilder-thumb {
+  position: absolute; top: 2px; left: 2px; width: 12px; height: 12px;
+  background: var(--muted); border-radius: 50%; transition: transform 0.2s, background 0.2s;
+}
+.schilder-switch input:checked + .schilder-track .schilder-thumb { transform: translateX(14px); background: #fff; }
+.schilder-switch-label { font-size: 13px; color: var(--text); }
+
 /* ── Deuren sectie in modal ─────────────────────────────── */
 .deuren-sectie { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border); }
 .deuren-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }

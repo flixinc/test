@@ -276,6 +276,7 @@ Velden:
 - aanmelder: de contactpersoon op de werklocatie (bijv. vermeld als "Naam aanmelder" of "contactpersoon ter plaatse"), formaat "Naam — telefoonnummer"
 - omschrijving: volledige omschrijving van de werkzaamheden of gevraagde offerte, max 400 tekens. Vermeld hier GEEN ruimtenummer (dat gaat in het ruimte-veld)
 - status: bepaal zelf op basis van de tekst: "offerte" als het een prijsaanvraag of offerteverzoek is, "lopend" als het een opdracht of werkopdracht is
+- schilder: true als de werkzaamheden (deels) schilderwerk betreffen (verven, schilderen, lakken, coating, behangen) of als er RAL-kleurnummers worden genoemd (bijv. RAL 9010), anders false
 Tekst:
 ${tekst.substring(0, 4000)}`
         }]
@@ -287,6 +288,7 @@ ${tekst.substring(0, 4000)}`
     const parsed = JSON.parse(raw);
     const geldig = ['offerte','lopend','wacht','wacht-reactie','wacht-akkoord','klaar'];
     if (parsed.status && geldig.includes(parsed.status)) document.getElementById('f-status').value = parsed.status;
+    if (parsed.schilder === true) document.getElementById('f-schilder').checked = true;
     if (parsed.nummer)        document.getElementById('f-nummer').value = parsed.nummer;
     if (parsed.adres)         document.getElementById('f-adres').value = parsed.adres;
     if (parsed.ruimte)        document.getElementById('f-ruimte').value = parsed.ruimte;
@@ -309,7 +311,8 @@ ${tekst.substring(0, 4000)}`
 function getFiltered() {
   return projecten.filter(p => {
     const matchFilter = activeFilter === 'alle' || p.status === activeFilter ||
-      (activeFilter === 'wacht' && p.status?.startsWith('wacht'));
+      (activeFilter === 'wacht' && p.status?.startsWith('wacht')) ||
+      (activeFilter === 'schilder' && p.schilder === true);
     const q = searchQuery.toLowerCase();
     const matchSearch = !q || [p.nummer, p.adres, p.ruimte, p.opdrachtgever, p.actie, p.notitie, p.contact]
       .some(v => (v||'').toLowerCase().includes(q));
@@ -347,7 +350,10 @@ function render() {
     empty.style.display = 'none';
     tbody.innerHTML = data.map(p => `
       <tr onclick="openModal(${p.id})">
-        <td><div class="proj-num">${p.nummer}</div></td>
+        <td>
+          <div class="proj-num">${p.nummer}</div>
+          ${p.schilder ? '<span class="schilder-badge">🖌 Schilder</span>' : ''}
+        </td>
         <td>
           <div class="proj-addr">${p.adres}</div>
           ${p.notitie ? `<div class="proj-client">${p.notitie.substring(0,55)}${p.notitie.length>55?'…':''}</div>` : ''}
@@ -370,7 +376,10 @@ function render() {
     <div class="card" onclick="openModal(${p.id})">
       <div class="card-top">
         <span class="card-num">${p.nummer}</span>
-        <span class="status-badge ${STATUS_CLASS[p.status]}"><span class="status-dot"></span>${STATUS_LABELS[p.status]}</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          ${p.schilder ? '<span class="schilder-badge">🖌 Schilder</span>' : ''}
+          <span class="status-badge ${STATUS_CLASS[p.status]}"><span class="status-dot"></span>${STATUS_LABELS[p.status]}</span>
+        </div>
       </div>
       <div class="card-addr">${p.adres}</div>
       <div class="card-client">${p.opdrachtgever}${p.contact ? ' · ' + p.contact.split('—')[0].trim() : ''}</div>
@@ -450,6 +459,7 @@ function openModal(id) {
     document.getElementById('f-contact').value = p.contact || '';
     document.getElementById('f-aanmelder').value = p.aanmelder || '';
     document.getElementById('f-notitie').value = p.notitie || '';
+    document.getElementById('f-schilder').checked = !!p.schilder;
     renderActieLog(p.acties_log || []);
     document.querySelectorAll('.actie-chip').forEach(c => {
       c.classList.toggle('selected', c.textContent === (p.actie || ''));
@@ -461,6 +471,7 @@ function openModal(id) {
     laadDeuren(p.nummer);
   } else {
     ['f-nummer','f-adres','f-ruimte','f-opdrachtgever','f-actie','f-contact','f-aanmelder','f-notitie'].forEach(i => document.getElementById(i).value = '');
+    document.getElementById('f-schilder').checked = false;
     document.getElementById('f-status').value = 'lopend';
     onStatusChange('lopend');
     document.getElementById('f-datum').value = '';
@@ -639,6 +650,7 @@ async function saveProject() {
     contact:       document.getElementById('f-contact').value.trim(),
     aanmelder:     document.getElementById('f-aanmelder').value.trim(),
     notitie:       document.getElementById('f-notitie').value.trim(),
+    schilder:      document.getElementById('f-schilder').checked,
   };
   if (!p.nummer || !p.adres) { alert('Vul minimaal kenmerk en adres in.'); return; }
   const dubbel = projecten.find(x => x.nummer.trim().toLowerCase() === p.nummer.toLowerCase() && x.id !== editingId);

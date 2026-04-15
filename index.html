@@ -2,7 +2,7 @@
   ╔══════════════════════════════════════════════════════════════╗
   ║  COMPIER — Projecten Dashboard                              ║
   ╠══════════════════════════════════════════════════════════════╣
-  ║  v1.9  2026-04-02  Kalender tab, ruimte chip in mobiele kaart ║
+  ║  v1.10 2026-04-15  Schilder label, filter & AI-detectie (RAL) ║
   ╚══════════════════════════════════════════════════════════════╝
 -->
 <!DOCTYPE html>
@@ -215,6 +215,7 @@
       <button class="filter-btn" data-filter="lopend">Lopend</button>
       <button class="filter-btn" data-filter="wacht">Wacht</button>
       <button class="filter-btn" data-filter="klaar">Klaar</button>
+      <button class="filter-btn" data-filter="schilder">🖌 Schilder</button>
     </div>
     <button class="btn-add" onclick="openModal()">+ Nieuw</button>
   </div>
@@ -313,6 +314,14 @@
           <option value="wacht-akkoord">Wacht op akkoord</option>
           <option value="klaar">Klaar</option>
         </select>
+      </div>
+      <div class="schilder-toggle-row">
+        <label>Type</label>
+        <label class="schilder-switch">
+          <input type="checkbox" id="f-schilder">
+          <span class="schilder-track"><span class="schilder-thumb"></span></span>
+          <span class="schilder-switch-label">Schilderopdracht</span>
+        </label>
       </div>
       <div class="form-group full">
         <label>Adres werklocatie</label>
