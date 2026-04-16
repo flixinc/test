@@ -2,7 +2,7 @@
   ╔══════════════════════════════════════════════════════════════╗
   ║  COMPIER — Projecten Dashboard                              ║
   ╠══════════════════════════════════════════════════════════════╣
-  ║  v1.10 2026-04-15  Schilder label, filter & AI-detectie (RAL) ║
+  ║  v1.11 2026-04-16  Medewerker portaal & toewijzing           ║
   ╚══════════════════════════════════════════════════════════════╝
 -->
 <!DOCTYPE html>
@@ -349,6 +349,13 @@
       <div class="form-group full">
         <label>Omschrijving</label>
         <textarea id="f-notitie" placeholder="Wat moet er gedaan worden?"></textarea>
+      </div>
+      <div class="form-section">Toewijzing</div>
+      <div class="form-group full">
+        <label>Toewijzen aan medewerker</label>
+        <select id="f-toegewezen">
+          <option value="">— Niet toegewezen —</option>
+        </select>
       </div>
       <div class="form-group full" id="actie-sectie">
         <label>Volgende actie</label>

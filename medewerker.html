@@ -1,0 +1,721 @@
+<!--
+  ╔══════════════════════════════════════════════════════════════╗
+  ║  COMPIER — Medewerker Portaal (mobiel)                      ║
+  ╠══════════════════════════════════════════════════════════════╣
+  ║  v1.0  2026-04-16  Eerste versie                            ║
+  ╚══════════════════════════════════════════════════════════════╝
+-->
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Compier — Mijn Opdrachten</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#e8611a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Compier MW">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap">
+<style>
+/* ── Reset & variabelen ───────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:       #0f0f0f;
+  --surface:  #181818;
+  --surface2: #222;
+  --border:   #2a2a2a;
+  --text:     #e8e8e8;
+  --muted:    #666;
+  --orange:   #e8611a;
+  --orange2:  #ff7a30;
+  --green:    #22c55e;
+  --yellow:   #f59e0b;
+  --red:      #ef4444;
+  --radius:   10px;
+  --font:     'IBM Plex Sans', system-ui, sans-serif;
+  --mono:     'IBM Plex Mono', monospace;
+}
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); font-size: 15px; -webkit-font-smoothing: antialiased; overflow: hidden; }
+
+/* ── Login ────────────────────────────────────────────────── */
+#login-screen {
+  position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: var(--bg); z-index: 100; padding: 24px;
+}
+.login-card {
+  width: 100%; max-width: 360px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 14px; padding: 32px 24px;
+}
+.login-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+.login-brand-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--orange); }
+.login-brand-name { font-family: var(--mono); font-size: 14px; font-weight: 600; letter-spacing: .1em; color: var(--text); }
+.login-title { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+.login-sub { font-size: 12px; color: var(--muted); margin-bottom: 24px; }
+.login-field { margin-bottom: 14px; }
+.login-field label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
+.login-field input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 10px 12px; color: var(--text); font-size: 15px; font-family: var(--font); outline: none; transition: border-color .15s; }
+.login-field input:focus { border-color: var(--orange); }
+.login-btn { width: 100%; background: var(--orange); color: #fff; border: none; border-radius: 8px; padding: 13px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 6px; transition: background .15s; }
+.login-btn:hover { background: var(--orange2); }
+.login-error { font-size: 13px; color: var(--red); margin-top: 12px; min-height: 18px; }
+
+/* ── App shell ────────────────────────────────────────────── */
+#app { display: none; flex-direction: column; height: 100%; }
+#app.visible { display: flex; }
+
+/* ── Header ───────────────────────────────────────────────── */
+.mw-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 16px 14px; border-bottom: 1px solid var(--border);
+  background: var(--surface); flex-shrink: 0;
+}
+.mw-brand { display: flex; align-items: center; gap: 9px; }
+.mw-brand-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--orange); }
+.mw-brand-name { font-family: var(--mono); font-size: 13px; font-weight: 600; letter-spacing: .09em; }
+.mw-user-info { text-align: right; }
+.mw-user-email { font-size: 11px; color: var(--muted); }
+.mw-logout-btn { background: none; border: none; color: var(--muted); font-size: 12px; cursor: pointer; padding: 0; margin-top: 2px; display: block; text-align: right; transition: color .15s; }
+.mw-logout-btn:hover { color: var(--orange); }
+
+/* ── Projectenlijst ───────────────────────────────────────── */
+.mw-list { flex: 1; overflow-y: auto; padding: 14px 14px 120px; }
+.mw-loading { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 14px; padding: 40px 0; justify-content: center; }
+.mw-empty { text-align: center; color: var(--muted); font-size: 14px; padding: 60px 20px; line-height: 1.6; }
+.spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--orange); border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.project-kaart {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 16px; margin-bottom: 10px; cursor: pointer;
+  transition: border-color .15s, transform .1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.project-kaart:active { transform: scale(0.985); }
+.project-kaart.urgent { border-left: 3px solid var(--red); }
+.project-kaart.schilder { border-left: 3px solid var(--orange); }
+.kaart-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.kaart-nr { font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--orange); letter-spacing: .06em; }
+.kaart-badges { display: flex; align-items: center; gap: 6px; }
+.status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+.status-badge { display: inline-flex; align-items: center; font-size: 10px; font-weight: 600; font-family: var(--mono); padding: 2px 7px; border-radius: 4px; letter-spacing: .04em; }
+.s-lopend  { background: rgba(232,97,26,.15); color: var(--orange); }
+.s-wacht   { background: rgba(245,158,11,.12); color: var(--yellow); }
+.s-offerte { background: rgba(102,102,102,.2); color: var(--muted); }
+.s-klaar   { background: rgba(34,197,94,.12); color: var(--green); }
+.schilder-badge { font-size: 10px; font-weight: 600; font-family: var(--mono); background: var(--surface2); color: var(--muted); border: 1px solid var(--border); border-radius: 3px; padding: 2px 7px; }
+.kaart-adres { font-size: 15px; font-weight: 500; margin-bottom: 3px; }
+.kaart-client { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+.kaart-actie { font-size: 12px; color: var(--orange); font-weight: 500; }
+
+/* ── Bottom sheet ─────────────────────────────────────────── */
+.sheet-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 50;
+  opacity: 0; pointer-events: none; transition: opacity .25s;
+}
+.sheet-overlay.open { opacity: 1; pointer-events: auto; }
+.sheet {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 51;
+  background: var(--surface); border-radius: 18px 18px 0 0;
+  border-top: 1px solid var(--border);
+  max-height: 92vh; overflow-y: auto;
+  transform: translateY(100%); transition: transform .3s cubic-bezier(.4,0,.2,1);
+}
+.sheet.open { transform: translateY(0); }
+.sheet-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 12px auto 0; }
+.sheet-content { padding: 16px 18px 40px; }
+
+.sheet-kop { margin-bottom: 18px; }
+.sheet-nr { font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--orange); letter-spacing: .07em; margin-bottom: 5px; }
+.sheet-adres { font-size: 18px; font-weight: 600; margin-bottom: 4px; line-height: 1.3; }
+.sheet-meta { font-size: 13px; color: var(--muted); margin-bottom: 10px; line-height: 1.5; }
+.sheet-omschrijving { font-size: 13px; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; line-height: 1.6; margin-bottom: 18px; white-space: pre-wrap; }
+
+/* ── Secties in sheet ─────────────────────────────────────── */
+.sheet-sectie-label {
+  font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--muted); border-top: 1px solid var(--border); padding-top: 14px; margin-bottom: 12px; margin-top: 4px;
+}
+.sheet-sectie-label:first-of-type { border-top: none; padding-top: 0; }
+
+/* ── Status chips ─────────────────────────────────────────── */
+.status-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.status-chip {
+  padding: 9px 14px; border-radius: 8px; font-size: 13px; font-weight: 500;
+  border: 1px solid var(--border); background: var(--bg); color: var(--muted);
+  cursor: pointer; transition: all .15s; -webkit-tap-highlight-color: transparent;
+}
+.status-chip.active { background: var(--orange); color: #fff; border-color: var(--orange); }
+.status-chip:active { opacity: .75; }
+
+/* ── Notities ─────────────────────────────────────────────── */
+.notities-lijst { margin-bottom: 14px; }
+.notitie-item {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 12px; margin-bottom: 8px;
+}
+.notitie-meta { font-size: 11px; color: var(--muted); margin-bottom: 4px; font-family: var(--mono); }
+.notitie-tekst { font-size: 13px; line-height: 1.5; }
+.notitie-form { display: flex; flex-direction: column; gap: 8px; }
+.notitie-input {
+  width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 12px; color: var(--text); font-size: 14px; font-family: var(--font);
+  resize: none; outline: none; line-height: 1.5; transition: border-color .15s;
+}
+.notitie-input:focus { border-color: var(--orange); }
+.btn-verstuur {
+  align-self: flex-end; background: var(--orange); color: #fff; border: none;
+  border-radius: 8px; padding: 9px 18px; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: background .15s; -webkit-tap-highlight-color: transparent;
+}
+.btn-verstuur:hover { background: var(--orange2); }
+.btn-verstuur:disabled { opacity: .5; cursor: default; }
+
+/* ── Foto's ───────────────────────────────────────────────── */
+.fotos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 14px; }
+.foto-thumb {
+  aspect-ratio: 1; border-radius: 7px; overflow: hidden; background: var(--bg);
+  border: 1px solid var(--border); cursor: pointer;
+}
+.foto-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.foto-upload-btn {
+  width: 100%; padding: 11px; background: var(--bg); border: 1px dashed var(--border);
+  border-radius: 8px; color: var(--muted); font-size: 13px; font-family: var(--font);
+  cursor: pointer; text-align: center; transition: border-color .15s, color .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.foto-upload-btn:hover { border-color: var(--orange); color: var(--orange); }
+.upload-progress { font-size: 12px; color: var(--muted); text-align: center; margin-top: 6px; min-height: 18px; }
+
+/* ── Toast ────────────────────────────────────────────────── */
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+  background: var(--surface2); color: var(--text); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 18px; font-size: 13px; font-weight: 500;
+  z-index: 200; transition: transform .25s cubic-bezier(.4,0,.2,1); white-space: nowrap;
+  pointer-events: none;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.ok { border-color: var(--green); color: var(--green); }
+.toast.err { border-color: var(--red); color: var(--red); }
+
+/* ── Foto lightbox ────────────────────────────────────────── */
+.lightbox {
+  position: fixed; inset: 0; background: rgba(0,0,0,.93); z-index: 300;
+  display: none; align-items: center; justify-content: center;
+}
+.lightbox.open { display: flex; }
+.lightbox img { max-width: 95vw; max-height: 90vh; border-radius: 8px; object-fit: contain; }
+.lightbox-close {
+  position: absolute; top: 16px; right: 16px; background: rgba(0,0,0,.5);
+  border: 1px solid var(--border); color: var(--text); border-radius: 50%;
+  width: 36px; height: 36px; font-size: 18px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+</style>
+</head>
+<body>
+
+<!-- ── Login scherm ──────────────────────────────────────── -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="login-brand-dot"></div>
+      <div class="login-brand-name">COMPIER</div>
+    </div>
+    <div class="login-title">Mijn Opdrachten</div>
+    <div class="login-sub">Log in met je Compier account</div>
+    <div class="login-field">
+      <label>E-mailadres</label>
+      <input type="email" id="login-email" placeholder="jouw@email.nl" autocomplete="email">
+    </div>
+    <div class="login-field">
+      <label>Wachtwoord</label>
+      <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password"
+             onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="login-btn" onclick="doLogin()">Inloggen</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- ── App ───────────────────────────────────────────────── -->
+<div id="app">
+  <header class="mw-header">
+    <div class="mw-brand">
+      <div class="mw-brand-dot"></div>
+      <div class="mw-brand-name">COMPIER</div>
+    </div>
+    <div class="mw-user-info">
+      <div class="mw-user-email" id="user-email-display"></div>
+      <button class="mw-logout-btn" onclick="doLogout()">Uitloggen</button>
+    </div>
+  </header>
+  <div class="mw-list" id="project-lijst">
+    <div class="mw-loading"><div class="spinner"></div> Opdrachten laden…</div>
+  </div>
+</div>
+
+<!-- ── Detail bottom sheet ────────────────────────────────── -->
+<div class="sheet-overlay" id="sheet-overlay" onclick="sluitSheet()"></div>
+<div class="sheet" id="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-content">
+    <!-- Kop -->
+    <div class="sheet-kop">
+      <div class="sheet-nr" id="s-nr"></div>
+      <div class="sheet-adres" id="s-adres"></div>
+      <div class="sheet-meta" id="s-meta"></div>
+    </div>
+    <div class="sheet-omschrijving" id="s-omschrijving" style="display:none"></div>
+
+    <!-- Status -->
+    <div class="sheet-sectie-label">Status bijwerken</div>
+    <div class="status-chips">
+      <div class="status-chip" data-status="lopend"           onclick="updateStatus('lopend')">Bezig</div>
+      <div class="status-chip" data-status="wacht"            onclick="updateStatus('wacht')">Wacht op materiaal</div>
+      <div class="status-chip" data-status="wacht-reactie"    onclick="updateStatus('wacht-reactie')">Wacht op reactie</div>
+      <div class="status-chip" data-status="klaar"            onclick="updateStatus('klaar')">Klaar melden ✓</div>
+    </div>
+
+    <!-- Notities -->
+    <div class="sheet-sectie-label">Notities</div>
+    <div class="notities-lijst" id="notities-lijst">
+      <div class="mw-loading" style="padding:20px 0"><div class="spinner"></div> Laden…</div>
+    </div>
+    <div class="notitie-form">
+      <textarea class="notitie-input" id="notitie-input" rows="3" placeholder="Typ een notitie…"></textarea>
+      <button class="btn-verstuur" id="btn-verstuur" onclick="verstuurNotitie()">Versturen</button>
+    </div>
+
+    <!-- Foto's -->
+    <div class="sheet-sectie-label" style="margin-top:18px">Foto's</div>
+    <div class="fotos-grid" id="fotos-grid"></div>
+    <label class="foto-upload-btn">
+      📷 Foto toevoegen
+      <input type="file" id="foto-input" accept="image/*" capture="environment" style="display:none" onchange="uploadFoto(this)">
+    </label>
+    <div class="upload-progress" id="upload-progress"></div>
+  </div>
+</div>
+
+<!-- ── Lightbox ───────────────────────────────────────────── -->
+<div class="lightbox" id="lightbox" onclick="sluitLightbox()">
+  <button class="lightbox-close" onclick="sluitLightbox()">✕</button>
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+<!-- ── Toast ─────────────────────────────────────────────── -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── Config (zelfde als main dashboard) ──────────────────── */
+const SB_URL = localStorage.getItem('compier_sb_url') || '';
+const SB_KEY = localStorage.getItem('compier_sb_key') || '';
+
+/* ── XSS-veilige escape ──────────────────────────────────── */
+function esc(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/* ── State ───────────────────────────────────────────────── */
+let accessToken  = '';
+let userEmail    = '';
+let huidigProject = null;
+
+const STATUS_LABELS = {
+  offerte: 'Offerte', lopend: 'Lopend',
+  wacht: 'Wacht op materiaal', 'wacht-reactie': 'Wacht op reactie',
+  'wacht-akkoord': 'Wacht op akkoord', klaar: 'Klaar'
+};
+const STATUS_CLASS = {
+  offerte: 's-offerte', lopend: 's-lopend',
+  wacht: 's-wacht', 'wacht-reactie': 's-wacht',
+  'wacht-akkoord': 's-wacht', klaar: 's-klaar'
+};
+
+/* ── JWT decode ──────────────────────────────────────────── */
+function jwtDecode(token) {
+  try {
+    const payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(atob(payload));
+  } catch { return {}; }
+}
+
+/* ── Supabase fetch ──────────────────────────────────────── */
+async function sbFetch(path, opts = {}) {
+  const url = `${SB_URL}/rest/v1/${path}`;
+  const res = await fetch(url, {
+    ...opts,
+    headers: {
+      'apikey': SB_KEY,
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+      'Prefer': opts.prefer || '',
+      ...(opts.headers || {})
+    }
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err || res.statusText);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+/* ── Auth ────────────────────────────────────────────────── */
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const ww    = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+  if (!email || !ww) { errEl.textContent = 'Vul e-mail en wachtwoord in.'; return; }
+
+  const sbUrl = localStorage.getItem('compier_sb_url');
+  const sbKey = localStorage.getItem('compier_sb_key');
+  if (!sbUrl || !sbKey) {
+    errEl.textContent = 'Supabase-gegevens niet ingesteld. Log eerst in via het hoofddashboard.';
+    return;
+  }
+
+  try {
+    const res = await fetch(`${sbUrl}/auth/v1/token?grant_type=password`, {
+      method: 'POST',
+      headers: { 'apikey': sbKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: ww })
+    });
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error_description || data.msg || 'Inloggen mislukt.'; return; }
+    accessToken = data.access_token;
+    userEmail   = jwtDecode(accessToken).email || email;
+    document.getElementById('user-email-display').textContent = userEmail;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').classList.add('visible');
+    laadOpdrachten();
+  } catch (e) {
+    errEl.textContent = 'Verbindingsfout: ' + e.message;
+  }
+}
+
+function doLogout() {
+  accessToken = '';
+  userEmail   = '';
+  document.getElementById('app').classList.remove('visible');
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-password').value = '';
+  document.getElementById('login-error').textContent = '';
+}
+
+/* ── Opdrachten laden ────────────────────────────────────── */
+async function laadOpdrachten() {
+  const lijst = document.getElementById('project-lijst');
+  lijst.innerHTML = '<div class="mw-loading"><div class="spinner"></div> Opdrachten laden…</div>';
+  try {
+    const emailEnc = encodeURIComponent(userEmail);
+    const data = await sbFetch(
+      `projecten?toegewezen_aan=eq.${emailEnc}&status=neq.klaar&order=datum.asc.nullslast`
+    );
+    renderLijst(data || []);
+  } catch (e) {
+    lijst.innerHTML = `<div class="mw-empty">Kon opdrachten niet laden.<br><small>${esc(e.message)}</small></div>`;
+  }
+}
+
+function renderLijst(projecten) {
+  const lijst = document.getElementById('project-lijst');
+  if (projecten.length === 0) {
+    lijst.innerHTML = '<div class="mw-empty">Geen actieve opdrachten toegewezen.<br>Je manager kan opdrachten aan jou toewijzen.</div>';
+    return;
+  }
+  lijst.innerHTML = projecten.map(p => {
+    const statusLabel = esc(STATUS_LABELS[p.status] || p.status);
+    const statusCls   = STATUS_CLASS[p.status] || 's-offerte';
+    const schilderBadge = p.schilder
+      ? '<span class="schilder-badge">🖌 Schilder</span>' : '';
+    const actieRegel = p.actie
+      ? `<div class="kaart-actie">${esc(p.actie)}</div>` : '';
+    const clientRegel = p.opdrachtgever
+      ? `<div class="kaart-client">${esc(p.opdrachtgever)}</div>` : '';
+
+    return `<div class="project-kaart${p.schilder ? ' schilder' : ''}"
+                 onclick="openSheet(${p.id})">
+      <div class="kaart-top">
+        <span class="kaart-nr">${esc(p.nummer)}</span>
+        <div class="kaart-badges">
+          ${schilderBadge}
+          <span class="status-badge ${statusCls}">
+            <span class="status-dot"></span>${statusLabel}
+          </span>
+        </div>
+      </div>
+      <div class="kaart-adres">${esc(p.adres)}</div>
+      ${clientRegel}
+      ${actieRegel}
+    </div>`;
+  }).join('');
+
+  // Sla projecten op voor sheet-openen
+  window._projecten = projecten;
+}
+
+/* ── Bottom sheet ────────────────────────────────────────── */
+function openSheet(id) {
+  const p = (window._projecten || []).find(x => x.id === id);
+  if (!p) return;
+  huidigProject = p;
+
+  // Kop vullen — alleen via textContent / esc() voor innerHTML
+  document.getElementById('s-nr').textContent    = p.nummer;
+  document.getElementById('s-adres').textContent = p.adres;
+
+  let metaRegel = '';
+  if (p.ruimte)        metaRegel += p.ruimte + '  ';
+  if (p.opdrachtgever) metaRegel += p.opdrachtgever + '\n';
+  if (p.contact)       metaRegel += p.contact + '\n';
+  if (p.aanmelder)     metaRegel += p.aanmelder;
+  document.getElementById('s-meta').textContent = metaRegel.trim();
+
+  const omschEl = document.getElementById('s-omschrijving');
+  if (p.notitie) {
+    omschEl.textContent  = p.notitie;
+    omschEl.style.display = 'block';
+  } else {
+    omschEl.style.display = 'none';
+  }
+
+  // Status chips
+  document.querySelectorAll('.status-chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.status === p.status);
+  });
+
+  // Secties resetten
+  document.getElementById('notities-lijst').innerHTML =
+    '<div class="mw-loading" style="padding:16px 0"><div class="spinner"></div> Laden…</div>';
+  document.getElementById('fotos-grid').innerHTML = '';
+  document.getElementById('notitie-input').value = '';
+  document.getElementById('upload-progress').textContent = '';
+
+  document.getElementById('sheet-overlay').classList.add('open');
+  document.getElementById('sheet').classList.add('open');
+
+  laadNotities(p.id);
+  laadFotos(p.id);
+}
+
+function sluitSheet() {
+  document.getElementById('sheet-overlay').classList.remove('open');
+  document.getElementById('sheet').classList.remove('open');
+  huidigProject = null;
+}
+
+/* ── Status updaten ──────────────────────────────────────── */
+async function updateStatus(status) {
+  if (!huidigProject) return;
+  try {
+    await sbFetch(`projecten?id=eq.${huidigProject.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+      prefer: 'return=minimal'
+    });
+    huidigProject.status = status;
+    document.querySelectorAll('.status-chip').forEach(c => {
+      c.classList.toggle('active', c.dataset.status === status);
+    });
+    // Update in lokale lijst ook
+    const p = (window._projecten || []).find(x => x.id === huidigProject.id);
+    if (p) p.status = status;
+    renderLijst(window._projecten || []);
+    toonToast('Status bijgewerkt', 'ok');
+    if (status === 'klaar') { sluitSheet(); laadOpdrachten(); }
+  } catch (e) {
+    toonToast('Fout: ' + e.message, 'err');
+  }
+}
+
+/* ── Notities ────────────────────────────────────────────── */
+async function laadNotities(projectId) {
+  const el = document.getElementById('notities-lijst');
+  try {
+    const data = await sbFetch(
+      `opdracht_notities?project_id=eq.${projectId}&order=toegevoegd_op.desc`
+    );
+    const notities = data || [];
+    if (notities.length === 0) {
+      el.innerHTML = '<div style="font-size:13px;color:var(--muted);padding:4px 0">Nog geen notities.</div>';
+      return;
+    }
+    // Gebruik textContent per element — geen innerHTML met externe data
+    el.innerHTML = '';
+    notities.forEach(n => {
+      const item = document.createElement('div');
+      item.className = 'notitie-item';
+
+      const meta = document.createElement('div');
+      meta.className = 'notitie-meta';
+      const datumStr = n.toegevoegd_op
+        ? new Date(n.toegevoegd_op).toLocaleString('nl-NL', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })
+        : '—';
+      meta.textContent = datumStr + (n.toegevoegd_door ? '  ·  ' + n.toegevoegd_door : '');
+
+      const tekst = document.createElement('div');
+      tekst.className = 'notitie-tekst';
+      tekst.textContent = n.notitie || '';
+
+      item.appendChild(meta);
+      item.appendChild(tekst);
+      el.appendChild(item);
+    });
+  } catch (e) {
+    el.innerHTML = `<div style="font-size:13px;color:var(--red)">Kon notities niet laden.</div>`;
+  }
+}
+
+async function verstuurNotitie() {
+  if (!huidigProject) return;
+  const input = document.getElementById('notitie-input');
+  const tekst = input.value.trim();
+  if (!tekst) return;
+  const btn = document.getElementById('btn-verstuur');
+  btn.disabled = true;
+  try {
+    await sbFetch('opdracht_notities', {
+      method: 'POST',
+      body: JSON.stringify({
+        project_id:    huidigProject.id,
+        notitie:       tekst,
+        toegevoegd_door: userEmail
+      }),
+      prefer: 'return=minimal'
+    });
+    input.value = '';
+    toonToast('Notitie opgeslagen', 'ok');
+    await laadNotities(huidigProject.id);
+  } catch (e) {
+    toonToast('Fout: ' + e.message, 'err');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+/* ── Foto's ──────────────────────────────────────────────── */
+async function laadFotos(projectId) {
+  const grid = document.getElementById('fotos-grid');
+  try {
+    const data = await sbFetch(
+      `opdracht_fotos?project_id=eq.${projectId}&order=toegevoegd_op.desc`
+    );
+    const fotos = data || [];
+    grid.innerHTML = '';
+    fotos.forEach(f => {
+      const div = document.createElement('div');
+      div.className = 'foto-thumb';
+      const img = document.createElement('img');
+      img.src = f.url;
+      img.alt = f.omschrijving || 'Foto';
+      img.loading = 'lazy';
+      img.addEventListener('click', () => openLightbox(f.url));
+      div.appendChild(img);
+      grid.appendChild(div);
+    });
+  } catch (e) {
+    // Geen fotos of tabel bestaat nog niet — stil negeren
+  }
+}
+
+async function uploadFoto(input) {
+  if (!huidigProject || !input.files || !input.files[0]) return;
+  const bestand   = input.files[0];
+  const progress  = document.getElementById('upload-progress');
+  progress.textContent = 'Uploaden…';
+
+  const ext      = bestand.name.split('.').pop().toLowerCase() || 'jpg';
+  const pad      = `${huidigProject.id}/${Date.now()}.${ext}`;
+  const sbUrl    = localStorage.getItem('compier_sb_url');
+  const sbKey    = localStorage.getItem('compier_sb_key');
+
+  try {
+    // Upload naar Supabase Storage
+    const uploadRes = await fetch(`${sbUrl}/storage/v1/object/opdracht-fotos/${pad}`, {
+      method: 'POST',
+      headers: {
+        'apikey': sbKey,
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': bestand.type || 'image/jpeg',
+        'x-upsert': 'true'
+      },
+      body: bestand
+    });
+    if (!uploadRes.ok) {
+      const err = await uploadRes.text();
+      throw new Error(err);
+    }
+    const pubUrl = `${sbUrl}/storage/v1/object/public/opdracht-fotos/${pad}`;
+
+    // Sla URL op in database
+    await sbFetch('opdracht_fotos', {
+      method: 'POST',
+      body: JSON.stringify({
+        project_id:    huidigProject.id,
+        url:           pubUrl,
+        toegevoegd_door: userEmail
+      }),
+      prefer: 'return=minimal'
+    });
+
+    progress.textContent = '';
+    input.value = '';
+    toonToast('Foto geüpload', 'ok');
+    await laadFotos(huidigProject.id);
+  } catch (e) {
+    progress.textContent = '';
+    toonToast('Upload mislukt: ' + e.message, 'err');
+  }
+}
+
+/* ── Lightbox ────────────────────────────────────────────── */
+function openLightbox(url) {
+  document.getElementById('lightbox-img').src = url;
+  document.getElementById('lightbox').classList.add('open');
+}
+function sluitLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.getElementById('lightbox-img').src = '';
+}
+
+/* ── Toast ───────────────────────────────────────────────── */
+let _toastTimer;
+function toonToast(tekst, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = tekst;
+  el.className   = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { el.className = 'toast'; }, 2800);
+}
+
+/* ── Swipe-to-close sheet ────────────────────────────────── */
+(function() {
+  const sheet = document.getElementById('sheet');
+  let startY = 0, dragging = false;
+  sheet.addEventListener('touchstart', e => { startY = e.touches[0].clientY; dragging = true; }, { passive: true });
+  sheet.addEventListener('touchmove', e => {
+    if (!dragging) return;
+    const dy = e.touches[0].clientY - startY;
+    if (dy > 0) sheet.style.transform = `translateY(${dy}px)`;
+  }, { passive: true });
+  sheet.addEventListener('touchend', e => {
+    dragging = false;
+    const dy = e.changedTouches[0].clientY - startY;
+    if (dy > 90) { sheet.style.transform = ''; sluitSheet(); }
+    else { sheet.style.transform = ''; }
+  });
+})();
+</script>
+</body>
+</html>

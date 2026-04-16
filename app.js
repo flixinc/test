@@ -147,6 +147,7 @@ function toonApp() {
   document.getElementById('login-screen').style.display = 'none';
   initApiKey();
   laadProjecten();
+  laadMedewerkers();
 }
 
 // ── Supabase helpers ──────────────────────────────────────
@@ -167,6 +168,18 @@ async function sbFetch(path, method = 'GET', body = null) {
   const res = await fetch(sbUrl + '/rest/v1/' + path, opts);
   if (!res.ok) throw new Error(await res.text());
   return method === 'DELETE' ? null : res.json();
+}
+
+async function laadMedewerkers() {
+  const select = document.getElementById('f-toegewezen');
+  if (!select || !sbUrl || !sbKey) return;
+  try {
+    const data = await sbFetch('medewerkers?order=naam.asc');
+    select.length = 0;
+    const leeg = new Option('— Niet toegewezen —', '');
+    select.add(leeg);
+    (data || []).forEach(m => select.add(new Option(m.naam, m.email)));
+  } catch(e) { /* tabel bestaat nog niet of lege lijst */ }
 }
 
 async function laadProjecten() {
@@ -460,6 +473,7 @@ function openModal(id) {
     document.getElementById('f-aanmelder').value = p.aanmelder || '';
     document.getElementById('f-notitie').value = p.notitie || '';
     document.getElementById('f-schilder').checked = !!p.schilder;
+    document.getElementById('f-toegewezen').value = p.toegewezen_aan || '';
     renderActieLog(p.acties_log || []);
     document.querySelectorAll('.actie-chip').forEach(c => {
       c.classList.toggle('selected', c.textContent === (p.actie || ''));
@@ -472,6 +486,7 @@ function openModal(id) {
   } else {
     ['f-nummer','f-adres','f-ruimte','f-opdrachtgever','f-actie','f-contact','f-aanmelder','f-notitie'].forEach(i => document.getElementById(i).value = '');
     document.getElementById('f-schilder').checked = false;
+    document.getElementById('f-toegewezen').value = '';
     document.getElementById('f-status').value = 'lopend';
     onStatusChange('lopend');
     document.getElementById('f-datum').value = '';
@@ -649,8 +664,9 @@ async function saveProject() {
     datum:         document.getElementById('f-datum').value,
     contact:       document.getElementById('f-contact').value.trim(),
     aanmelder:     document.getElementById('f-aanmelder').value.trim(),
-    notitie:       document.getElementById('f-notitie').value.trim(),
-    schilder:      document.getElementById('f-schilder').checked,
+    notitie:        document.getElementById('f-notitie').value.trim(),
+    schilder:       document.getElementById('f-schilder').checked,
+    toegewezen_aan: document.getElementById('f-toegewezen').value,
   };
   if (!p.nummer || !p.adres) { alert('Vul minimaal kenmerk en adres in.'); return; }
   const dubbel = projecten.find(x => x.nummer.trim().toLowerCase() === p.nummer.toLowerCase() && x.id !== editingId);
