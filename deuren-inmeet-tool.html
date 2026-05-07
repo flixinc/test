@@ -1,0 +1,1756 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Deuren">
+<meta name="theme-color" content="#E8611A">
+<title>Deuren Inmeten · Compier</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0f0f0f;--panel:#181818;--panel2:#222222;--border:#2a2a2a;
+  --accent:#E8611A;--accent2:#4caf6e;--blue:#4a90d9;--dim:#666666;--text:#e8e8e8;
+  --label:#888888;--red:#c0392b;--orange:#E8611A;
+}
+body{background:var(--bg);font-family:'IBM Plex Sans',sans-serif;color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+/* TOPBAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:68px;border-bottom:1px solid var(--border);background:var(--panel);flex-shrink:0;}
+.topbar-left{display:flex;align-items:center;gap:12px;}
+.back-btn{width:30px;height:30px;background:var(--panel2);border:1px solid var(--border);border-radius:5px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--dim);user-select:none;transition:all .15s;}
+.back-btn:hover{border-color:var(--accent);color:var(--text);}
+.project-info{display:flex;flex-direction:column;gap:3px;}
+.project-name{font-size:14px;font-weight:600;letter-spacing:-.01em;}
+.project-id{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim);letter-spacing:.04em;}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.nav-arrows{display:flex;gap:4px;}
+.nav-btn{width:30px;height:30px;background:var(--panel2);border:1px solid var(--border);border-radius:5px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--dim);font-size:11px;user-select:none;transition:all .15s;}
+.nav-btn:hover:not(.disabled){border-color:var(--accent);color:var(--text);}
+.nav-btn.disabled{opacity:.3;pointer-events:none;}
+.status-chip{font-size:11px;font-weight:500;padding:3px 10px;border-radius:4px;}
+.status-open{background:rgba(102,102,102,.1);color:var(--dim);border:1px solid rgba(102,102,102,.2);}
+.status-ingemeten{background:rgba(76,175,110,.1);color:var(--accent2);border:1px solid rgba(76,175,110,.25);}
+.save-btn{font-size:12px;font-weight:600;padding:6px 16px;background:var(--accent);color:#fff;border:none;border-radius:5px;cursor:pointer;transition:opacity .15s;letter-spacing:.01em;}
+.save-btn:hover{opacity:.88;}
+.save-btn:disabled{opacity:.5;cursor:not-allowed;}
+.deur-naam-input{background:none;border:none;outline:none;font-size:14px;font-weight:600;color:var(--text);font-family:'IBM Plex Sans',sans-serif;width:180px;border-bottom:1px solid transparent;transition:border-color .15s;letter-spacing:-.01em;}
+.deur-naam-input:focus{border-bottom-color:var(--accent);}
+
+/* SCREENS */
+.screen{display:none;flex:1;flex-direction:column;overflow:hidden;min-height:0;}
+.screen.active{display:flex;}
+
+/* SETUP */
+.setup-body{flex:1;display:flex;align-items:center;justify-content:center;padding:24px;}
+.setup-card{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:28px;width:100%;max-width:420px;display:flex;flex-direction:column;gap:20px;}
+.setup-title{font-size:15px;font-weight:600;}
+.setup-sub{font-size:12px;color:var(--dim);line-height:1.6;}
+.setup-field{display:flex;flex-direction:column;gap:6px;}
+.setup-lbl{font-size:10px;color:var(--label);font-weight:600;text-transform:uppercase;letter-spacing:.08em;}
+.setup-input{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:9px 12px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text);outline:none;width:100%;transition:border-color .15s;}
+.setup-input:focus{border-color:var(--accent);}
+.setup-btn{background:var(--accent);color:#fff;border:none;border-radius:5px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;letter-spacing:.01em;}
+.setup-error{font-size:11px;color:var(--red);}
+
+/* PROJECT PICKER */
+.picker-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;}
+.picker-search-wrap{padding:12px 16px 0;flex-shrink:0;}
+.picker-search{width:100%;background:var(--panel);border:1px solid var(--border);border-radius:5px;padding:8px 12px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text);outline:none;transition:border-color .15s;}
+.picker-search:focus{border-color:var(--accent);}
+.picker-card{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:border-color .15s;}
+.picker-card:hover{border-color:var(--accent);}
+.picker-nr{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);background:rgba(232,97,26,.08);border:1px solid rgba(232,97,26,.2);border-radius:4px;padding:3px 7px;flex-shrink:0;}
+.picker-info{flex:1;display:flex;flex-direction:column;gap:2px;}
+.picker-adres{font-size:13px;font-weight:500;}
+.picker-opd{font-size:11px;color:var(--dim);}
+.picker-arrow{color:var(--dim);font-size:16px;flex-shrink:0;}
+
+/* LIST */
+.list-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;}
+.deur-card{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color .15s;}
+.deur-card:hover{border-color:var(--accent);}
+.deur-nr{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--dim);background:var(--panel2);border:1px solid var(--border);border-radius:4px;padding:4px 8px;flex-shrink:0;min-width:28px;text-align:center;}
+.deur-info{flex:1;display:flex;flex-direction:column;gap:2px;}
+.deur-naam-lbl{font-size:13px;font-weight:500;}
+.deur-maten{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--dim);}
+.deur-del-btn{color:var(--dim);font-size:13px;flex-shrink:0;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:4px;transition:all .15s;}
+.deur-del-btn:hover{background:rgba(192,57,43,.15);color:var(--red);}
+.deur-arrow{color:var(--dim);font-size:16px;flex-shrink:0;}
+.chip-sm{font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.04em;flex-shrink:0;}
+.add-btn{display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(232,97,26,.05);border:1.5px dashed rgba(232,97,26,.25);border-radius:6px;padding:16px;cursor:pointer;color:var(--accent);font-size:13px;font-weight:500;transition:all .15s;}
+.add-btn:hover{background:rgba(232,97,26,.1);border-color:var(--accent);}
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--dim);padding:40px;text-align:center;}
+.empty-state p{font-size:13px;line-height:1.6;}
+.list-count{font-size:11px;color:var(--dim);font-family:'IBM Plex Mono',monospace;}
+
+/* MEASURE */
+.main{display:flex;flex:1;overflow:hidden;min-height:0;}
+.sidebar{width:215px;background:var(--panel);border-right:1px solid var(--border);padding:14px 12px;display:flex;flex-direction:column;gap:14px;overflow-y:auto;flex-shrink:0;}
+.sec-label{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;}
+.field-group{display:flex;flex-direction:column;gap:5px;}
+.field{display:flex;align-items:center;background:var(--panel2);border:1px solid var(--border);border-radius:4px;padding:6px 10px;gap:6px;transition:border-color .15s;}
+.field:focus-within{border-color:var(--accent);}
+.field-lbl{font-size:11px;color:var(--label);flex:1;white-space:nowrap;}
+.field input[type=number]{background:none;border:none;outline:none;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;color:var(--text);width:56px;text-align:right;}
+.field .unit{font-size:10px;color:var(--dim);}
+hr.div{border:none;border-top:1px solid var(--border);}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:4px 2px;}
+.pill-toggle{display:inline-flex;background:var(--panel2);border:1px solid var(--border);border-radius:5px;padding:2px;width:100%;}
+.pill-opt{font-size:11px;font-weight:500;padding:5px 4px;border-radius:4px;color:var(--dim);transition:all .15s;user-select:none;flex:1;text-align:center;cursor:pointer;}
+.pill-opt.active{background:var(--accent);color:#fff;}
+.onoff-toggle{width:34px;height:20px;border-radius:10px;background:var(--accent);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;}
+.onoff-toggle::after{content:'';position:absolute;top:3px;left:17px;width:14px;height:14px;background:#fff;border-radius:50%;transition:left .2s;}
+.onoff-toggle.off{background:var(--border);}
+.onoff-toggle.off::after{left:3px;}
+.canvas-area{flex:1;background:var(--bg);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+.grid-bg{position:absolute;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:40px 40px;opacity:.18;}
+#door-svg{width:100%;height:100%;z-index:1;position:relative;}
+.right-panel{width:188px;background:var(--panel);border-left:1px solid var(--border);padding:14px 12px;display:flex;flex-direction:column;gap:9px;overflow-y:auto;flex-shrink:0;}
+.bkd-card{background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:9px 11px;display:flex;flex-direction:column;gap:3px;transition:border-color .15s;}
+.bkd-card:focus-within{border-color:#4caf6e;}
+.bkd-header{display:flex;align-items:center;gap:6px;}
+.bkd-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
+.bkd-name{font-size:10px;color:var(--label);font-weight:600;letter-spacing:.05em;}
+.bkd-input-row{display:flex;align-items:baseline;gap:4px;}
+.bkd-input{background:none;border:none;outline:none;font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:500;color:var(--text);width:84px;}
+.bkd-unit{font-size:11px;color:var(--dim);}
+.bkd-desc{font-size:10px;color:var(--dim);}
+.bottombar{height:34px;background:var(--panel);border-top:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:20px;flex-shrink:0;}
+.stat{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--dim);}
+.stat span{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text);font-weight:500;}
+.zoom-controls{margin-left:auto;display:flex;align-items:center;gap:6px;}
+.zoom-btn{width:22px;height:22px;background:var(--panel2);border:1px solid var(--border);border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text);font-size:13px;user-select:none;}
+.zoom-val{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--dim);width:34px;text-align:center;}
+
+/* TOAST */
+.toast{position:fixed;bottom:48px;left:50%;transform:translateX(-50%) translateY(12px);background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:9px 18px;font-size:12px;font-weight:500;color:var(--text);opacity:0;transition:all .2s;pointer-events:none;z-index:200;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.success{border-color:rgba(76,175,110,.4);color:var(--accent2);}
+.toast.error{border-color:rgba(192,57,43,.4);color:var(--red);}
+
+/* LOADER */
+.loader{position:fixed;inset:0;background:rgba(15,17,23,.65);display:flex;align-items:center;justify-content:center;z-index:300;opacity:0;pointer-events:none;transition:opacity .2s;}
+.loader.show{opacity:1;pointer-events:all;}
+.spinner{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+
+<!-- SETUP -->
+<div id="screen-setup" class="screen">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="project-info">
+        <div class="project-name">Deuren Inmeten</div>
+        <div class="project-id">Compier · Configuratie</div>
+      </div>
+    </div>
+  </div>
+  <div class="setup-body">
+    <div class="setup-card">
+      <div>
+        <div class="setup-title">Supabase configureren</div>
+        <div class="setup-sub" style="margin-top:6px">Eenmalig instellen. Zelfde gegevens als het Compier dashboard.</div>
+      </div>
+      <div class="setup-field">
+        <div class="setup-lbl">Supabase URL</div>
+        <input class="setup-input" id="inp-url" placeholder="https://xxx.supabase.co" autocomplete="off">
+      </div>
+      <div class="setup-field">
+        <div class="setup-lbl">Anon Key</div>
+        <input class="setup-input" id="inp-key" placeholder="eyJ..." autocomplete="off">
+      </div>
+      <div class="setup-field">
+        <div class="setup-lbl">E-mailadres</div>
+        <input class="setup-input" id="inp-email" type="email" placeholder="naam@compier.nl" autocomplete="email">
+      </div>
+      <div class="setup-field">
+        <div class="setup-lbl">Wachtwoord</div>
+        <input class="setup-input" id="inp-pass" type="password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+
+      <div id="setup-error" class="setup-error" style="display:none"></div>
+      <button class="setup-btn" onclick="saveSetup()">Inloggen &amp; starten</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROJECT PICKER -->
+<div id="screen-picker" class="screen">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="back-btn" onclick="history.back()">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 2L4 6L8 10" stroke="#9ca3b0" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+      <div class="project-info">
+        <div class="project-name">Deuren Inmeten</div>
+        <div class="project-id">Kies een project</div>
+      </div>
+    </div>
+  </div>
+  <div class="picker-search-wrap">
+    <input class="picker-search" id="picker-search" placeholder="Zoek op nummer of adres…" oninput="filterPicker()">
+  </div>
+  <div class="picker-body" id="picker-body"></div>
+</div>
+
+<!-- LIST -->
+<div id="screen-list" class="screen">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="back-btn" onclick="goBack()">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 2L4 6L8 10" stroke="#9ca3b0" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+      <div class="project-info">
+        <div class="project-name" id="list-naam">Laden...</div>
+        <div class="project-id" id="list-id">—</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="list-count" id="list-count"></div>
+    </div>
+  </div>
+  <div class="list-body" id="list-body"></div>
+</div>
+
+<!-- MEASURE -->
+<div id="screen-measure" class="screen">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="back-btn" onclick="goToList()">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 2L4 6L8 10" stroke="#9ca3b0" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+      <div class="project-info">
+        <input class="deur-naam-input" id="deur-naam-input" value="Deur 1" oninput="onNaamChange()">
+        <div class="project-id" id="measure-meta">—</div>
+      </div>
+      <div class="nav-arrows">
+        <div class="nav-btn disabled" id="nav-prev" onclick="navDeur(-1)">∧</div>
+        <div class="nav-btn disabled" id="nav-next" onclick="navDeur(1)">∨</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="status-chip status-open" id="measure-status">Open</div>
+      <button class="save-btn" style="background:var(--panel2);border:1px solid var(--border);color:var(--label);" onclick="openPrint(false)">⎙</button>
+      <button class="save-btn" id="save-btn" onclick="saveDeur()">Opslaan</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="sidebar">
+      <div>
+        <div class="sec-label">Draairichting</div>
+        <div class="pill-toggle">
+          <div class="pill-opt" id="pill-l" onclick="setDraai('links')">Links</div>
+          <div class="pill-opt active" id="pill-r" onclick="setDraai('rechts')">Rechts</div>
+        </div>
+      </div>
+      <div>
+        <div class="sec-label">Arm aan</div>
+        <div class="pill-toggle">
+          <div class="pill-opt active" id="arm-hang"  onclick="setArm('hang')">Hangzijde</div>
+          <div class="pill-opt"        id="arm-sluit" onclick="setArm('sluit')">Sluitzijde</div>
+          <div class="pill-opt"        id="arm-beide" onclick="setArm('beide')">Allebei</div>
+        </div>
+      </div>
+      <hr class="div">
+      <div>
+        <div class="sec-label">Deur</div>
+        <div class="field-group">
+          <div class="field"><span class="field-lbl">Breedte</span><input id="kW" type="number" value="930" oninput="redraw()"><span class="unit">mm</span></div>
+          <div class="field"><span class="field-lbl">Hoogte</span><input id="kH" type="number" value="2315" oninput="redraw()"><span class="unit">mm</span></div>
+          <div class="field"><span class="field-lbl">RAL kleur</span><input id="ralKleur" type="text" placeholder="zoek RAL…" list="ral-list" autocomplete="off" style="width:100px;text-align:right;font-size:11px;"></div>
+        </div>
+      </div>
+      <hr class="div">
+      <div>
+        <div class="toggle-row">
+          <span class="sec-label" style="margin:0">Glassparing</span>
+          <div class="onoff-toggle" id="glas-toggle" onclick="toggleGlas()"></div>
+        </div>
+        <div id="glas-fields" style="margin-top:8px;">
+          <div class="field-group">
+            <div class="field"><span class="field-lbl">Dagmaat bov.</span><input id="dmBov" type="number" value="140" oninput="redraw()"><span class="unit">mm</span></div>
+            <div class="field"><span class="field-lbl">Offset X</span><input id="pOffX" type="number" value="140" oninput="redraw()"><span class="unit">mm</span></div>
+            <div class="field"><span class="field-lbl">Breedte</span><input id="pW" type="number" value="240" oninput="redraw()"><span class="unit">mm</span></div>
+            <div class="field"><span class="field-lbl">Hoogte</span><input id="pH" type="number" value="1385" oninput="redraw()"><span class="unit">mm</span></div>
+          </div>
+        </div>
+      </div>
+      <hr class="div">
+      <div>
+        <div class="toggle-row">
+          <span class="sec-label" style="margin:0">Kabelovergang EA280</span>
+          <div class="onoff-toggle off" id="kabel-toggle" onclick="toggleKabel()"></div>
+        </div>
+        <div id="kabel-fields" style="margin-top:8px;display:none;">
+          <div class="field-group">
+            <div class="field"><span class="field-lbl">Van BKD</span><input id="kabelVan" type="number" value="0" oninput="redraw()"><span class="unit">mm</span></div>
+          </div>
+          <div style="font-size:10px;color:var(--dim);margin-top:6px;line-height:1.5;">Hangzijde · 323mm lang · tot <span id="kabel-tot-display">—</span> mm</div>
+        </div>
+      </div>
+      <hr class="div">
+      <div>
+        <div class="toggle-row">
+          <span class="sec-label" style="margin:0">BSW 89×89 Connect</span>
+          <div class="onoff-toggle off" id="bsw-toggle" onclick="toggleBsw()"></div>
+        </div>
+        <div id="bsw-fields" style="margin-top:8px;display:none;">
+          <div class="field-group">
+            <div class="field"><span class="field-lbl">Hart data sch.</span><input id="bswBkd" type="number" value="0" oninput="redraw()"><span class="unit">mm</span></div>
+          </div>
+          <div style="font-size:10px;color:var(--dim);margin-top:6px;line-height:1.5;">Hangzijde · BKD gemeten · looplijn → cilinder</div>
+        </div>
+      </div>
+      <hr class="div">
+      <div>
+        <div class="sec-label">Hart kruk (slot)</div>
+        <div class="field-group">
+          <div class="field"><span class="field-lbl">Hart kruk OKD</span><input id="okdVal" type="number" value="1050" oninput="redraw()"><span class="unit">mm</span></div>
+          <div class="field"><span class="field-lbl">Doornmaat</span><input id="doornVal" type="number" value="60" max="100" oninput="this.value=Math.min(100,this.value);redraw()"><span class="unit">mm</span></div>
+          <div class="field"><span class="field-lbl">PC maat</span><input id="pcVal" type="number" value="72" oninput="redraw()"><span class="unit">mm</span></div>
+        </div>
+        <div class="toggle-row" style="margin-top:8px;">
+          <span class="toggle-lbl" style="font-size:11px;color:var(--label);">Senioren (cilinder boven)</span>
+          <div class="onoff-toggle off" id="senioren-toggle" onclick="toggleSenioren()"></div>
+        </div>
+        <div style="margin-top:8px;">
+          <div style="font-size:10px;color:var(--label);margin-bottom:5px;">Voorplaat slot</div>
+          <div class="pill-toggle" style="width:100%;">
+            <div class="pill-opt active" id="vp-20" onclick="setVoorplaat(20)">20 mm</div>
+            <div class="pill-opt" id="vp-24" onclick="setVoorplaat(24)">24 mm</div>
+          </div>
+        </div>
+        <div class="field" style="margin-top:6px;">
+          <span class="field-lbl">BKSK</span>
+          <input id="bkskVal" type="number" value="0" oninput="">
+          <span class="unit">mm</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="canvas-area">
+      <div class="grid-bg"></div>
+      <svg id="door-svg" viewBox="0 0 480 540" preserveAspectRatio="xMidYMid meet">
+        <line id="dh-total" stroke="#f87171" stroke-width="1" opacity=".85"/>
+        <line id="dh-tick-t" stroke="#f87171" stroke-width="1" opacity=".85"/>
+        <line id="dh-tick-b" stroke="#f87171" stroke-width="1" opacity=".85"/>
+        <text id="dh-total-txt" fill="#f87171" font-size="10" font-family="IBM Plex Mono,monospace" text-anchor="middle" opacity=".95"/>
+        <line id="dh-bov" stroke="#fb923c" stroke-width="1" opacity=".7"/>
+        <line id="dh-bov-t1" stroke="#fb923c" stroke-width="1" opacity=".7"/>
+        <line id="dh-bov-t2" stroke="#fb923c" stroke-width="1" opacity=".7"/>
+        <text id="dh-bov-txt" fill="#fb923c" font-size="9" font-family="IBM Plex Mono,monospace" text-anchor="end" opacity=".9"/>
+        <line id="dh-pan" stroke="#fb923c" stroke-width="1" opacity=".7"/>
+        <line id="dh-pan-t2" stroke="#fb923c" stroke-width="1" opacity=".7"/>
+        <text id="dh-pan-txt" fill="#fb923c" font-size="9" font-family="IBM Plex Mono,monospace" text-anchor="end" opacity=".9"/>
+        <line id="dh-rem" stroke="#fb923c" stroke-width="1" opacity=".7"/>
+        <line id="dh-rem-t2" stroke="#fb923c" stroke-width="1" opacity=".7"/>
+        <text id="dh-rem-txt" fill="#fb923c" font-size="9" font-family="IBM Plex Mono,monospace" text-anchor="end" opacity=".9"/>
+        <line id="dw-total" stroke="#f87171" stroke-width="1" opacity=".85"/>
+        <line id="dw-tk-l" stroke="#f87171" stroke-width="1" opacity=".85"/>
+        <line id="dw-tk-r" stroke="#f87171" stroke-width="1" opacity=".85"/>
+        <text id="dw-total-txt" fill="#f87171" font-size="10" font-family="IBM Plex Mono,monospace" text-anchor="middle" opacity=".95"/>
+        <line id="dw-off" stroke="#fb923c" stroke-width="1" opacity=".7"/>
+        <line id="dw-off-t1" stroke="#fb923c" stroke-width="1" opacity=".7"/>
+        <line id="dw-off-t2" stroke="#fb923c" stroke-width="1" opacity=".7"/>
+        <text id="dw-off-txt" fill="#fb923c" font-size="9" font-family="IBM Plex Mono,monospace" text-anchor="middle" opacity=".9"/>
+        <line id="dw-pan" stroke="#fb923c" stroke-width="1" opacity=".7"/>
+        <line id="dw-pan-t2" stroke="#fb923c" stroke-width="1" opacity=".7"/>
+        <text id="dw-pan-txt" fill="#fb923c" font-size="9" font-family="IBM Plex Mono,monospace" text-anchor="middle" opacity=".9"/>
+        <line id="dw-rem" stroke="#fb923c" stroke-width="1" opacity=".7"/>
+        <line id="dw-rem-t2" stroke="#fb923c" stroke-width="1" opacity=".7"/>
+        <text id="dw-rem-txt" fill="#fb923c" font-size="9" font-family="IBM Plex Mono,monospace" text-anchor="middle" opacity=".9"/>
+        <rect id="deur-outer" fill="none" stroke="#4a90d9" stroke-width="2.5" rx="2" opacity=".9"/>
+        <rect id="glassparing" fill="rgba(74,144,217,.08)" stroke="#4a90d9" stroke-width="1.5" stroke-dasharray="5 3" rx="2" visibility="hidden"/>
+        <line id="doorn-line" stroke="#fb923c" stroke-width="1.2" opacity=".7"/>
+        <line id="doorn-tick" stroke="#fb923c" stroke-width="1.5" opacity=".7"/>
+        <text id="doorn-txt" fill="#fb923c" font-size="9" font-family="IBM Plex Mono,monospace" text-anchor="middle" opacity=".85"/>
+        <circle id="kruk-dot" r="4" fill="none" stroke="#fb923c" stroke-width="1.5" opacity="0"/>
+        <circle id="kruk-dot2" r="2" fill="#fb923c" opacity="0"/>
+        <line id="pc-line" stroke="#9ca3b0" stroke-width="1.2" stroke-dasharray="3 2" opacity=".8"/>
+        <line id="pc-tick" stroke="#9ca3b0" stroke-width="1.5" opacity=".8"/>
+        <line id="pc-tick2" stroke="#9ca3b0" stroke-width="1.5" opacity=".8"/>
+        <text id="pc-txt" fill="#9ca3b0" font-size="9" font-family="IBM Plex Mono,monospace" opacity=".9"/>
+        <path id="cil-path" fill="rgba(156,163,176,.1)" stroke="#9ca3b0" stroke-width="1.5" stroke-linejoin="round" opacity=".9" visibility="hidden"/>
+        <!-- KABELOVERGANG EA280 -->
+        <rect id="kabel-rect" rx="2" fill="rgba(142,107,191,.2)" stroke="#8e6bbf" stroke-width="1.5" stroke-dasharray="4 2" visibility="hidden"/>
+        <text id="kabel-lbl" fill="#8e6bbf" font-size="8" font-family="IBM Plex Mono,monospace" text-anchor="middle" opacity=".9" visibility="hidden"/>
+        <text id="kabel-van-txt" fill="#8e6bbf" font-size="8" font-family="IBM Plex Mono,monospace" opacity=".85" visibility="hidden"/>
+        <text id="kabel-tot-txt" fill="#8e6bbf" font-size="8" font-family="IBM Plex Mono,monospace" opacity=".85" visibility="hidden"/>
+        <!-- BSW 89x89 CONNECT -->
+        <rect id="bsw-sch" width="10" height="16" rx="2" fill="rgba(74,144,217,.2)" stroke="#4a90d9" stroke-width="1.5" visibility="hidden"/>
+        <text id="bsw-sch-lbl" fill="#4a90d9" font-size="8" font-family="IBM Plex Mono,monospace" dominant-baseline="middle" opacity=".9" visibility="hidden"/>
+        <line id="bsw-lijn" stroke="#4a90d9" stroke-width="1" stroke-dasharray="4 3" opacity=".7" visibility="hidden"/>
+        <rect id="sch-r0" width="10" height="16" rx="2" fill="rgba(76,175,110,.25)" stroke="#4caf6e" stroke-width="1.5"/>
+        <text id="sch-t0" fill="#4caf6e" font-size="9" font-family="IBM Plex Mono,monospace" dominant-baseline="middle" opacity=".9"/>
+        <rect id="sch-r1" width="10" height="16" rx="2" fill="rgba(76,175,110,.25)" stroke="#4caf6e" stroke-width="1.5"/>
+        <text id="sch-t1" fill="#4caf6e" font-size="9" font-family="IBM Plex Mono,monospace" dominant-baseline="middle" opacity=".9"/>
+        <rect id="sch-r2" width="10" height="16" rx="2" fill="rgba(251,146,60,.2)" stroke="#fb923c" stroke-width="1.5"/>
+        <text id="sch-t2" fill="#fb923c" font-size="9" font-family="IBM Plex Mono,monospace" dominant-baseline="middle" opacity=".9"/>
+        <rect id="sch-r3" width="10" height="16" rx="2" fill="rgba(248,113,113,.2)" stroke="#f87171" stroke-width="1.5"/>
+        <text id="sch-t3" fill="#f87171" font-size="9" font-family="IBM Plex Mono,monospace" dominant-baseline="middle" opacity=".9"/>
+      </svg>
+    </div>
+
+    <div class="right-panel">
+      <div class="sec-label">Scharnierkrozing / BKD</div>
+      <hr class="div" style="margin:0 0 4px;">
+      <div class="bkd-card">
+        <div class="bkd-header"><div class="bkd-dot" style="background:#38d9a9"></div><span class="bkd-name">BKD 1</span></div>
+        <div class="bkd-input-row"><input class="bkd-input" id="bkd1" type="number" value="142" oninput="redraw()"><span class="bkd-unit">mm</span></div>
+        <div class="bkd-desc">Bovenkant</div>
+      </div>
+      <div class="bkd-card">
+        <div class="bkd-header"><div class="bkd-dot" style="background:#38d9a9"></div><span class="bkd-name">BKD 2</span></div>
+        <div class="bkd-input-row"><input class="bkd-input" id="bkd2" type="number" value="391" oninput="redraw()"><span class="bkd-unit">mm</span></div>
+        <div class="bkd-desc">2e scharnier</div>
+      </div>
+      <div class="bkd-card">
+        <div class="bkd-header"><div class="bkd-dot" style="background:#fb923c"></div><span class="bkd-name">BKD 3</span></div>
+        <div class="bkd-input-row"><input class="bkd-input" id="bkd3" type="number" value="1006" oninput="redraw()"><span class="bkd-unit">mm</span></div>
+        <div class="bkd-desc">Midden</div>
+      </div>
+      <div class="bkd-card">
+        <div class="bkd-header"><div class="bkd-dot" style="background:#f87171"></div><span class="bkd-name">BKD 4</span></div>
+        <div class="bkd-input-row"><input class="bkd-input" id="bkd4" type="number" value="1872" oninput="redraw()"><span class="bkd-unit">mm</span></div>
+        <div class="bkd-desc">Onderkant</div>
+      </div>
+      <hr class="div">
+      <div class="sec-label">Hart kruk</div>
+      <div class="bkd-card">
+        <div class="bkd-header"><div class="bkd-dot" style="background:#fb923c"></div><span class="bkd-name">HK hoogte</span></div>
+        <div class="bkd-input-row"><span id="hk-display" style="font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:500;">1015</span><span class="bkd-unit">mm</span></div>
+        <div class="bkd-desc">Hoogte slot</div>
+      </div>
+      <div class="bkd-card">
+        <div class="bkd-header"><div class="bkd-dot" style="background:#fb923c"></div><span class="bkd-name">Doornmaat</span></div>
+        <div class="bkd-input-row"><span id="doorn-display" style="font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:500;">72</span><span class="bkd-unit">mm</span></div>
+        <div class="bkd-desc">Vanuit sluitzijde · max 100</div>
+      </div>
+      <div class="bkd-card">
+        <div class="bkd-header"><div class="bkd-dot" style="background:#9ca3b0"></div><span class="bkd-name">PC maat</span></div>
+        <div class="bkd-input-row"><span id="pc-display" style="font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:500;">72</span><span class="bkd-unit">mm</span></div>
+        <div class="bkd-desc">Hart kruk → cilindergat</div>
+      </div>
+      <hr class="div">
+      <div class="sec-label" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>Foto's</span>
+        <span id="foto-count" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim);font-weight:400;text-transform:none;letter-spacing:0;"></span>
+      </div>
+      <div id="foto-grid" style="display:flex;flex-wrap:wrap;gap:5px;min-height:20px;"></div>
+      <div class="add-btn" style="font-size:11px;padding:9px;margin-top:2px;" onclick="document.getElementById('foto-input').click()">
+        <span style="font-size:15px;line-height:1;">📷</span> Foto toevoegen
+      </div>
+      <input type="file" id="foto-input" accept="image/*" style="display:none" onchange="uploadFoto(this)">
+    </div>
+  </div>
+
+  <div class="bottombar">
+    <div class="stat">Deur <span id="st-deur">975 × 2124</span></div>
+    <div class="stat">Draairichting <span id="st-draai">Rechts</span></div>
+    <div class="stat">Glassparing <span id="st-glas">Ja</span></div>
+    <div class="stat">Scharnierkrozing <span id="st-sch">4</span></div>
+    <div class="zoom-controls">
+      <div class="zoom-btn" onclick="setZoom(zoomLvl-10)">−</div>
+      <div class="zoom-val" id="zoom-lbl">100%</div>
+      <div class="zoom-btn" onclick="setZoom(zoomLvl+10)">+</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="loader" id="loader"><div class="spinner"></div></div>
+
+<script>
+// STATE
+const S={mNummer:null,project:null,deuren:[],activeDeur:null,activeIdx:0,allProjecten:[],leverancierEmail:null,leverancierNaam:null};
+let zoomLvl=100,draai='rechts',glasAan=true,armMode='hang',kabelAan=false,bswAan=false,seniorenAan=false,voorplaatSlot=20;
+const Z={x0:75,y0:18,x1:310,y1:468};
+
+// UTILS
+const G=id=>document.getElementById(id);
+const vv=(id,def)=>{const n=parseFloat(G(id)?.value);return!isNaN(n)?n:def;};
+const sa=(id,attrs)=>{const el=G(id);if(!el)return;for(const[k,val]of Object.entries(attrs))el.setAttribute(k,typeof val==='number'?val.toFixed(2):val);};
+const tx=(id,t)=>{const e=G(id);if(e)e.textContent=t;};
+const cl=id=>sa(id,{x1:0,y1:0,x2:0,y2:0});
+const ln=(id,x1,y1,x2,y2)=>sa(id,{x1,y1,x2,y2});
+
+// LOADER
+const setLoad=on=>G('loader').classList.toggle('show',on);
+
+// TOAST
+let _t;
+function toast(msg,type=''){
+  const t=G('toast');t.textContent=msg;
+  t.className='toast show'+(type?' '+type:'');
+  clearTimeout(_t);_t=setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// SCREENS
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  G('screen-'+id).classList.add('active');
+}
+
+// SUPABASE
+async function supa(path,method='GET',body=null){
+  const url=localStorage.getItem('compier_sb_url');
+  const key=localStorage.getItem('compier_sb_key');
+  const token=localStorage.getItem('compier_access_token')||key;
+  const h={'apikey':key,'Authorization':'Bearer '+token,'Content-Type':'application/json'};
+  if(method==='POST'||method==='PATCH')h['Prefer']='return=representation';
+  const r=await fetch(`${url}/rest/v1/${path}`,{method,headers:h,body:body?JSON.stringify(body):null});
+  if(r.status===401){localStorage.removeItem('compier_access_token');show('setup');throw new Error('Sessie verlopen, log opnieuw in');}
+  if(!r.ok)throw new Error(await r.text());
+  const txt=await r.text();return txt?JSON.parse(txt):null;
+}
+
+// SETUP
+async function saveSetup(){
+  const url=G('inp-url').value.trim(),key=G('inp-key').value.trim();
+  const email=G('inp-email').value.trim(),pass=G('inp-pass').value;
+  const err=G('setup-error');
+  if(!url||!key||!email||!pass){err.textContent='Vul alle velden in';err.style.display='';return;}
+  err.style.display='none';
+  try{
+    const r=await fetch(`${url}/auth/v1/token?grant_type=password`,{
+      method:'POST',
+      headers:{'apikey':key,'Content-Type':'application/json'},
+      body:JSON.stringify({email,password:pass})
+    });
+    if(!r.ok){const e=await r.json();err.textContent=e.error_description||'Inloggen mislukt';err.style.display='';return;}
+    const data=await r.json();
+    localStorage.setItem('compier_sb_url',url);
+    localStorage.setItem('compier_sb_key',key);
+    localStorage.setItem('compier_access_token',data.access_token);
+    init();
+  }catch(e){err.textContent='Verbindingsfout: '+e.message;err.style.display='';}
+}
+
+// INIT
+async function init(){
+  const params=new URLSearchParams(location.search);
+  S.mNummer=params.get('m');
+  const url=localStorage.getItem('compier_sb_url'),key=localStorage.getItem('compier_sb_key');
+  if(url)G('inp-url').value=url;if(key)G('inp-key').value=key;
+  const token=localStorage.getItem('compier_access_token');
+  if(!url||!key||!token){show('setup');return;}
+  if(!S.mNummer){
+    // Geen M-nummer: laad alle actieve projecten (lopend + offerte)
+    setLoad(true);
+    try{
+    try{
+      const cfg=await supa('instellingen?sleutel=in.(leverancier_email,leverancier_naam)');
+      (cfg||[]).forEach(r=>{
+        if(r.sleutel==='leverancier_email')S.leverancierEmail=r.waarde;
+        if(r.sleutel==='leverancier_naam')S.leverancierNaam=r.waarde;
+      });
+    }catch(e){}
+      const data=await supa('projecten?status=in.(lopend,offerte)&order=nummer.asc');
+      S.allProjecten=data||[];
+      renderPicker(S.allProjecten);
+      show('picker');
+    }catch(e){
+      G('setup-error').textContent='Verbinding mislukt: '+e.message;
+      G('setup-error').style.display='';show('setup');
+    }finally{setLoad(false);}
+    return;
+  }
+  setLoad(true);
+  try{
+    // Haal instellingen op (leverancier email etc.)
+    try{
+      const cfg=await supa('instellingen?sleutel=in.(leverancier_email,leverancier_naam)');
+      (cfg||[]).forEach(r=>{
+        if(r.sleutel==='leverancier_email')S.leverancierEmail=r.waarde;
+        if(r.sleutel==='leverancier_naam')S.leverancierNaam=r.waarde;
+      });
+    }catch(e){/* instellingen tabel bestaat nog niet, geen probleem */}
+    const proj=await supa(`projecten?nummer=eq.${encodeURIComponent(S.mNummer)}&limit=1`);
+    S.project=proj?.[0]||{m_nummer:S.mNummer};
+    S.deuren=(await supa(`deuren?m_nummer=eq.${encodeURIComponent(S.mNummer)}&order=deur_nr.asc`))||[];
+    renderList();show('list');
+  }catch(e){
+    G('setup-error').textContent='Verbinding mislukt: '+e.message;
+    G('setup-error').style.display='';show('setup');
+  }finally{setLoad(false);}
+}
+
+// PROJECT NAAM
+function projNaam(){
+  const p=S.project;if(!p)return S.mNummer;
+  return p.naam||p.project_naam||p.omschrijving||p.title||p.adres||S.mNummer;
+}
+
+// PICKER
+function renderPicker(lijst){
+  const body=G('picker-body');body.innerHTML='';
+  if(!lijst.length){
+    body.innerHTML='<div style="color:var(--dim);font-size:13px;padding:20px 0;">Geen actieve projecten gevonden.</div>';
+    return;
+  }
+  lijst.forEach(p=>{
+    const card=document.createElement('div');card.className='picker-card';
+    const isOfferte=p.status==='offerte';
+    card.innerHTML=`
+      <div class="picker-nr">${p.nummer||'—'}</div>
+      <div class="picker-info">
+        <div class="picker-adres">${p.adres||'Onbekend adres'}</div>
+        <div class="picker-opd">${p.opdrachtgever||''}</div>
+      </div>
+      ${isOfferte?'<span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;background:rgba(74,144,217,.1);color:#4a90d9;border:1px solid rgba(74,144,217,.2);flex-shrink:0;">Offerte</span>':''}
+      <div class="picker-arrow">›</div>`;
+    card.onclick=()=>kiesPicker(p);
+    body.appendChild(card);
+  });
+}
+
+function filterPicker(){
+  const q=(G('picker-search').value||'').toLowerCase();
+  const gefilterd=S.allProjecten.filter(p=>
+    (p.nummer||'').toLowerCase().includes(q)||
+    (p.adres||'').toLowerCase().includes(q)||
+    (p.opdrachtgever||'').toLowerCase().includes(q)
+  );
+  renderPicker(gefilterd);
+}
+
+async function kiesPicker(p){
+  S.mNummer=p.nummer;S.project=p;
+  setLoad(true);
+  try{
+    S.deuren=(await supa(`deuren?m_nummer=eq.${encodeURIComponent(p.nummer)}&order=deur_nr.asc`))||[];
+    renderList();show('list');
+  }catch(e){toast('Fout bij laden: '+e.message,'error');}
+  finally{setLoad(false);}
+}
+
+// RENDER LIST
+function renderList(){
+  tx('list-naam',projNaam());tx('list-id',S.mNummer);
+  const total=S.deuren.length,ing=S.deuren.filter(d=>d.status==='ingemeten').length;
+  tx('list-count',total>0?`${ing}/${total} ingemeten`:'');
+  const body=G('list-body');body.innerHTML='';
+  if(total===0){
+    const e=document.createElement('div');e.className='empty-state';
+    e.innerHTML='<p>Nog geen deuren voor dit project.<br>Voeg er een toe om te beginnen.</p>';
+    body.appendChild(e);
+  }else{
+    S.deuren.forEach((d,i)=>{
+      const card=document.createElement('div');card.className='deur-card';
+      const ing=d.status==='ingemeten';
+      const maten=d.breedte&&d.hoogte?`${d.breedte} × ${d.hoogte} mm · ${d.draairichting||'rechts'}${d.ral_kleur?' · RAL '+d.ral_kleur:''}`:'—';
+      card.innerHTML=`
+        <div class="deur-nr">${d.deur_nr}</div>
+        <div class="deur-info">
+          <div class="deur-naam-lbl">${d.naam||'Deur '+d.deur_nr}</div>
+          <div class="deur-maten">${maten}</div>
+        </div>
+        <div class="status-chip chip-sm ${ing?'status-ingemeten':'status-open'}">${ing?'Ingemeten':'Open'}</div>
+        <div class="deur-del-btn" title="Verwijderen" onclick="event.stopPropagation();deleteDeur(${d.id?`'${d.id}'`:null},${i})">✕</div>
+        <div class="deur-arrow">›</div>`;
+      card.onclick=()=>openMeasure(i);body.appendChild(card);
+    });
+  }
+  const btn=document.createElement('div');btn.className='add-btn';
+  btn.innerHTML='<span style="font-size:18px;line-height:1;margin-right:2px">+</span> Deur toevoegen';
+  btn.onclick=addDeur;body.appendChild(btn);
+}
+
+// ADD DEUR
+async function addDeur(){
+  setLoad(true);
+  try{
+    const nr=S.deuren.length+1;
+    const result=await supa('deuren','POST',{
+      m_nummer:S.mNummer,deur_nr:nr,naam:`Deur ${nr}`,status:'open',
+      breedte:930,hoogte:2315,draairichting:'rechts',arm:'hang',ral_kleur:'',glas_aan:true,
+      dm_bov:140,off_x:140,glas_breedte:240,glas_hoogte:1385,
+      hk_hoogte:1050,doornmaat:60,pc_maat:72,bkd1:142,bkd2:391,bkd3:1006,bkd4:1872,
+      kabel_aan:false,kabel_van:0,kabel_tot:0,
+      bsw_aan:false,bsw_bkd:0,senioren:false,voorplaat_slot:20,bksk:0
+    });
+    const nd=Array.isArray(result)?result[0]:result;
+    S.deuren.push(nd);openMeasure(S.deuren.length-1);
+  }catch(e){toast('Fout bij toevoegen: '+e.message,'error');}
+  finally{setLoad(false);}
+}
+
+async function deleteDeur(id,idx){
+  const d=S.deuren[idx];
+  const naam=d?.naam||`Deur ${d?.deur_nr||idx+1}`;
+  if(!confirm(`"${naam}" verwijderen? Dit kan niet ongedaan worden.`))return;
+  if(!id){S.deuren.splice(idx,1);renderList();return;}
+  setLoad(true);
+  try{
+    await supa(`deuren?id=eq.${id}`,'DELETE');
+    S.deuren.splice(idx,1);
+    renderList();
+    toast('Deur verwijderd','success');
+  }catch(e){toast('Fout: '+e.message,'error');}
+  finally{setLoad(false);}
+}
+function openMeasure(idx){
+  S.activeIdx=idx;S.activeDeur=S.deuren[idx];
+  populateForm(S.activeDeur);updateTopbar();show('measure');redraw();
+  loadFotos();
+}
+
+function updateTopbar(){
+  const d=S.activeDeur;
+  G('deur-naam-input').value=d.naam||`Deur ${d.deur_nr}`;
+  tx('measure-meta',`${S.mNummer} · Deur ${d.deur_nr}/${S.deuren.length}`);
+  const chip=G('measure-status');
+  chip.className='status-chip '+(d.status==='ingemeten'?'status-ingemeten':'status-open');
+  chip.textContent=d.status==='ingemeten'?'Ingemeten':'Open';
+  G('nav-prev').classList.toggle('disabled',S.activeIdx===0);
+  G('nav-next').classList.toggle('disabled',S.activeIdx>=S.deuren.length-1);
+}
+
+function navDeur(dir){
+  const next=S.activeIdx+dir;
+  if(next<0||next>=S.deuren.length)return;
+  autoSave().then(()=>openMeasure(next));
+}
+
+// POPULATE FORM
+function populateForm(d){
+  const set=(id,val,def)=>{const el=G(id);if(el)el.value=val??def;};
+  set('kW',d.breedte,930);set('kH',d.hoogte,2315);
+  const ralEl=document.getElementById('ralKleur');if(ralEl)ralEl.value=d.ral_kleur||'';
+  set('dmBov',d.dm_bov,140);set('pOffX',d.off_x,140);
+  set('pW',d.glas_breedte,240);set('pH',d.glas_hoogte,1385);
+  set('okdVal',d.hk_hoogte,1050);set('doornVal',d.doornmaat,60);set('pcVal',d.pc_maat,72);
+  set('bkd1',d.bkd1,142);set('bkd2',d.bkd2,391);set('bkd3',d.bkd3,1006);set('bkd4',d.bkd4,1872);
+  draai=d.draairichting||'rechts';
+  G('pill-l').classList.toggle('active',draai==='links');
+  G('pill-r').classList.toggle('active',draai==='rechts');
+  armMode=d.arm||'hang';
+  ['hang','sluit','beide'].forEach(k=>G('arm-'+k).classList.toggle('active',k===armMode));
+  glasAan=d.glas_aan!==false;
+  G('glas-toggle').classList.toggle('off',!glasAan);
+  G('glas-fields').style.display=glasAan?'':'none';
+  kabelAan=d.kabel_aan===true;
+  G('kabel-toggle').classList.toggle('off',!kabelAan);
+  G('kabel-fields').style.display=kabelAan?'':'none';
+  set('kabelVan',d.kabel_van,0);
+  bswAan=d.bsw_aan===true;
+  G('bsw-toggle').classList.toggle('off',!bswAan);
+  G('bsw-fields').style.display=bswAan?'':'none';
+  set('bswBkd',d.bsw_bkd,0);
+  seniorenAan=d.senioren===true;
+  G('senioren-toggle').classList.toggle('off',!seniorenAan);
+  voorplaatSlot=d.voorplaat_slot||20;
+  G('vp-20').classList.toggle('active',voorplaatSlot===20);
+  G('vp-24').classList.toggle('active',voorplaatSlot===24);
+  set('bkskVal',d.bksk||0,0);
+}
+
+// GET DATA
+function getData(){
+  return{
+    naam:G('deur-naam-input').value,
+    breedte:vv('kW',930),hoogte:vv('kH',2315),
+    draairichting:draai,arm:armMode,ral_kleur:(document.getElementById('ralKleur')?.value||'').trim(),glas_aan:glasAan,
+    dm_bov:vv('dmBov',140),off_x:vv('pOffX',140),
+    glas_breedte:vv('pW',240),glas_hoogte:vv('pH',1385),
+    hk_hoogte:vv('okdVal',1050),doornmaat:vv('doornVal',60),pc_maat:vv('pcVal',72),
+    bkd1:vv('bkd1',142),bkd2:vv('bkd2',391),bkd3:vv('bkd3',1006),bkd4:vv('bkd4',1872),
+    kabel_aan:kabelAan,kabel_van:vv('kabelVan',0),kabel_tot:vv('kabelVan',0)+323,
+    bsw_aan:bswAan,bsw_bkd:vv('bswBkd',0),
+    senioren:seniorenAan,voorplaat_slot:voorplaatSlot,bksk:vv('bkskVal',0)
+  };
+}
+
+function onNaamChange(){if(S.activeDeur)S.activeDeur.naam=G('deur-naam-input').value;}
+
+// AUTO SAVE
+async function autoSave(){
+  if(!S.activeDeur?.id)return;
+  try{
+    const data=getData();
+    await supa(`deuren?id=eq.${S.activeDeur.id}`,'PATCH',{...data,updated_at:new Date().toISOString()});
+    const i=S.deuren.findIndex(d=>d.id===S.activeDeur.id);
+    if(i>=0)S.deuren[i]={...S.deuren[i],...data};
+  }catch(e){/*silent*/}
+}
+
+// SAVE
+async function saveDeur(){
+  if(!S.activeDeur?.id)return;
+  const btn=G('save-btn');btn.disabled=true;btn.textContent='…';
+  try{
+    const data=getData();
+    const result=await supa(`deuren?id=eq.${S.activeDeur.id}`,'PATCH',{...data,status:'ingemeten',updated_at:new Date().toISOString()});
+    const upd=Array.isArray(result)?result[0]:{...S.activeDeur,...data,status:'ingemeten'};
+    const i=S.deuren.findIndex(d=>d.id===S.activeDeur.id);
+    if(i>=0)S.deuren[i]=upd;S.activeDeur=upd;
+    const chip=G('measure-status');chip.className='status-chip status-ingemeten';chip.textContent='Ingemeten';
+    toast('Opgeslagen ✓','success');
+  }catch(e){toast('Fout: '+e.message,'error');}
+  finally{btn.disabled=false;btn.textContent='Opslaan';}
+}
+
+// NAV
+function goToList(){autoSave().then(()=>{renderList();show('list');});}
+function goBack(){
+  if(history.length>1)history.back();
+  else window.location.href='https://flixinc.github.io/compier-dashboard/';
+}
+
+// MEASURE CONTROLS
+function setDraai(d){draai=d;G('pill-l').classList.toggle('active',d==='links');G('pill-r').classList.toggle('active',d==='rechts');redraw();}
+function setArm(a){armMode=a;['hang','sluit','beide'].forEach(k=>G('arm-'+k).classList.toggle('active',k===a));}
+function toggleGlas(){glasAan=!glasAan;G('glas-toggle').classList.toggle('off',!glasAan);G('glas-fields').style.display=glasAan?'':'none';redraw();}
+function toggleKabel(){kabelAan=!kabelAan;G('kabel-toggle').classList.toggle('off',!kabelAan);G('kabel-fields').style.display=kabelAan?'':'none';redraw();}
+function toggleBsw(){bswAan=!bswAan;G('bsw-toggle').classList.toggle('off',!bswAan);G('bsw-fields').style.display=bswAan?'':'none';redraw();}
+function toggleSenioren(){seniorenAan=!seniorenAan;G('senioren-toggle').classList.toggle('off',!seniorenAan);redraw();}
+function setVoorplaat(v){voorplaatSlot=v;G('vp-20').classList.toggle('active',v===20);G('vp-24').classList.toggle('active',v===24);}
+function setZoom(z){zoomLvl=Math.min(200,Math.max(40,z));tx('zoom-lbl',zoomLvl+'%');redraw();}
+
+// REDRAW
+function redraw(){
+  const kW=vv('kW',930),kH=vv('kH',2315);
+  const dmB=vv('dmBov',140),offX=vv('pOffX',140),pw=vv('pW',240),ph=vv('pH',1385);
+  const hk=vv('okdVal',1050);
+  const bkds=[vv('bkd1',142),vv('bkd2',391),vv('bkd3',1006),vv('bkd4',1872)];
+  const zW=Z.x1-Z.x0,zH=Z.y1-Z.y0;
+  const sc=Math.min(zW/kW,zH/kH)*(zoomLvl/100);
+  const dW=kW*sc,dH=kH*sc;
+  const ox=Z.x0+(zW-dW)/2,oy=Z.y0+(zH-dH)/2;
+  const sx=x=>ox+x*sc,sy=y=>oy+y*sc;
+
+  sa('deur-outer',{x:ox,y:oy,width:dW,height:dH});
+
+  const isL=draai==='links';
+  const hangX=isL?ox-10:ox+dW-2,hangLX=isL?ox-16:ox+dW+14,hangTA=isL?'end':'start';
+  bkds.forEach((val,i)=>{
+    const by=sy(val);
+    const zichtbaar = val > 0 ? 'visible' : 'hidden';
+    sa(`sch-r${i}`,{x:hangX,y:by-8,visibility:zichtbaar});
+    sa(`sch-t${i}`,{x:hangLX,y:by,'text-anchor':hangTA,visibility:zichtbaar});
+    tx(`sch-t${i}`,`bkd ${val}`);
+  });
+
+  const doorn=vv('doornVal',72),pc=vv('pcVal',72);
+  tx('doorn-display',doorn);tx('pc-display',pc);
+
+  const krukY=sy(kH-hk);tx('hk-display',hk);
+  const showKruk=hk>0;
+
+  // Doornmaat: vanuit sluitzijde, stippellijn binnen deur
+  const doornPx=doorn*sc;
+  const sluitX=isL?ox+dW:ox;
+  const doornEndX=isL?sluitX-doornPx:sluitX+doornPx;
+  const tkD=4;
+
+  if(showKruk){
+    ln('doorn-line',sluitX,krukY,doornEndX,krukY);
+    sa('doorn-line',{'stroke-dasharray':'4 3','stroke-width':'1.2'});
+    ln('doorn-tick',sluitX,krukY-tkD,sluitX,krukY+tkD);
+    sa('doorn-txt',{x:(sluitX+doornEndX)/2,y:krukY-7,'text-anchor':'middle'});
+    tx('doorn-txt',doorn+' DM');
+    sa('kruk-dot',{cx:doornEndX,cy:krukY,opacity:1});
+    sa('kruk-dot2',{cx:doornEndX,cy:krukY,opacity:1});
+  }else{
+    cl('doorn-line');cl('doorn-tick');tx('doorn-txt','');
+    sa('kruk-dot',{opacity:0});sa('kruk-dot2',{opacity:0});
+  }
+
+  const pcPx=pc*sc,cilCX=doornEndX,cilCY=seniorenAan?krukY-pcPx:krukY+pcPx;
+  const showCil=showKruk&&pc>0;
+  // PC label naast de lijn, naar het midden van de deur
+  const pcLblX=isL?cilCX-14:cilCX+14,pcTA=isL?'end':'start';
+  if(showCil){
+    ln('pc-line',cilCX,krukY,cilCX,cilCY);
+    ln('pc-tick',cilCX-4,krukY,cilCX+4,krukY);
+    ln('pc-tick2',cilCX-4,cilCY,cilCX+4,cilCY);
+    sa('pc-txt',{x:pcLblX,y:(krukY+cilCY)/2+4,'text-anchor':pcTA});
+    tx('pc-txt',pc+' PC');
+    const khR=5,khSW=5,khSH=8,khSR=khSW/2;
+    let pd;
+    if(seniorenAan){
+      // Cilinder boven kruk: cirkel op cilCY, slot wijst omlaag (richting kruk)
+      const yJ=cilCY+Math.sqrt(Math.max(0,khR*khR-khSR*khSR));
+      pd=[`M ${cilCX-khSR} ${yJ}`,`A ${khR} ${khR} 0 1 1 ${cilCX+khSR} ${yJ}`,`L ${cilCX+khSR} ${cilCY+khR+khSH-khSR}`,`A ${khSR} ${khSR} 0 0 1 ${cilCX-khSR} ${cilCY+khR+khSH-khSR}`,`Z`].join(' ');
+    }else{
+      // Cilinder onder kruk: cirkel op cilCY, slot wijst omlaag (weg van kruk)
+      const yJ=cilCY+Math.sqrt(Math.max(0,khR*khR-khSR*khSR));
+      pd=[`M ${cilCX-khSR} ${yJ}`,`A ${khR} ${khR} 0 1 1 ${cilCX+khSR} ${yJ}`,`L ${cilCX+khSR} ${cilCY+khR+khSH-khSR}`,`A ${khSR} ${khSR} 0 0 1 ${cilCX-khSR} ${cilCY+khR+khSH-khSR}`,`Z`].join(' ');
+    }
+    sa('cil-path',{d:pd,visibility:'visible'});
+  }else{
+    cl('pc-line');cl('pc-tick');cl('pc-tick2');tx('pc-txt','');sa('cil-path',{visibility:'hidden'});
+  }
+
+  if(glasAan){
+    sa('glassparing',{x:sx(offX),y:sy(dmB),width:Math.max(0,pw*sc),height:Math.max(0,ph*sc),visibility:'visible'});
+  }else{sa('glassparing',{visibility:'hidden'});}
+
+  // ---- KABELOVERGANG EA280 ----
+  const kabelVan=vv('kabelVan',0);
+  const kabelTot=kabelVan+323;
+  if(G('kabel-tot-display'))tx('kabel-tot-display',kabelVan>0?kabelTot:'—');
+  if(kabelAan&&kabelVan>0){
+    const kVanY=sy(kabelVan),kTotY=sy(kabelTot);
+    const kabelW=12,kabelX=isL?ox-kabelW+2:ox+dW-2;
+    sa('kabel-rect',{x:kabelX,y:Math.min(kVanY,kTotY),width:kabelW,height:Math.abs(kTotY-kVanY),visibility:'visible'});
+    sa('kabel-lbl',{x:kabelX+kabelW/2,y:(kVanY+kTotY)/2+3,visibility:'visible'});
+    tx('kabel-lbl','EA280');
+    const lblX=isL?kabelX-20:kabelX+kabelW+20;
+    const lblTA=isL?'end':'start';
+    sa('kabel-van-txt',{x:lblX,y:kVanY-2,'text-anchor':lblTA,visibility:'visible'});
+    tx('kabel-van-txt',kabelVan);
+    sa('kabel-tot-txt',{x:lblX,y:kTotY+9,'text-anchor':lblTA,visibility:'visible'});
+    tx('kabel-tot-txt',kabelTot);
+  }else{
+    sa('kabel-rect',{visibility:'hidden'});
+    sa('kabel-lbl',{visibility:'hidden'});
+    sa('kabel-van-txt',{visibility:'hidden'});
+    sa('kabel-tot-txt',{visibility:'hidden'});
+  }
+
+  // ---- BSW 89x89 CONNECT ----
+  const bswBkd=vv('bswBkd',0);
+  if(bswAan&&bswBkd>0){
+    const bswY=sy(bswBkd);
+    // Data scharnier blokje op hangzijde (blauw)
+    const bswX=isL?ox-10:ox+dW-2;
+    const bswLblX=isL?ox-16:ox+dW+14;
+    const bswTA=isL?'end':'start';
+    sa('bsw-sch',{x:bswX,y:bswY-8,visibility:'visible'});
+    sa('bsw-sch-lbl',{x:bswLblX,y:bswY,'text-anchor':bswTA,visibility:'visible'});
+    tx('bsw-sch-lbl',`data ${bswBkd}`);
+    // Looplijn: van data scharnier (hangzijde) naar slotkast/cilinder (sluitzijde)
+    const vanX=isL?ox:ox+dW;   // hangzijde binnenkant
+    const totX=isL?ox+dW:ox;   // sluitzijde binnenkant
+    // Cilinder Y = krukY + pcPx (zelfde als cilCY in de schildje berekening)
+    const krukYbsw=sy(kH-hk);
+    const pcPxBsw=vv('pcVal',72)*sc;
+    const cilYbsw=seniorenAan?krukYbsw-pcPxBsw:krukYbsw+pcPxBsw;
+    // Lijn loopt van data scharnier hart horizontaal + diagonaal naar cilinder
+    sa('bsw-lijn',{x1:vanX,y1:bswY,x2:totX,y2:cilYbsw,visibility:'visible'});
+  }else{
+    sa('bsw-sch',{visibility:'hidden'});
+    sa('bsw-sch-lbl',{visibility:'hidden'});
+    sa('bsw-lijn',{visibility:'hidden'});
+  }
+
+  // Maatlijnen hoogte
+  const tk=5,dimR=isL;
+  const lx1=dimR?ox+dW+52:ox-46,lx2=dimR?ox+dW+34:ox-30;
+  const txX=dimR?lx2-4:lx2+4,txR=dimR?'end':'start';
+  ln('dh-total',lx1,oy,lx1,oy+dH);ln('dh-tick-t',lx1-tk,oy,lx1+tk,oy);ln('dh-tick-b',lx1-tk,oy+dH,lx1+tk,oy+dH);
+  const dhcx=dimR?lx1+8:lx1-8,dhcy=oy+dH/2;
+  sa('dh-total-txt',{x:dhcx,y:dhcy,transform:`rotate(-90,${dhcx},${dhcy})`,'text-anchor':'middle'});tx('dh-total-txt',kH);
+  ['dh-bov','dh-bov-t1','dh-bov-t2'].forEach(id=>cl(id));tx('dh-bov-txt','');
+
+  if(glasAan){
+    const bovY=sy(dmB),panY=sy(dmB+ph);
+    const dmBPx=bovY-oy,panPx=panY-bovY;
+    ln('dh-bov',lx2,oy,lx2,bovY);ln('dh-bov-t1',lx2-tk,oy,lx2+tk,oy);ln('dh-bov-t2',lx2-tk,bovY,lx2+tk,bovY);
+    sa('dh-bov-txt',{x:txX,y:oy+dmBPx/2+4,'text-anchor':txR});tx('dh-bov-txt',dmBPx>10?dmB:'');
+    ln('dh-pan',lx2,bovY,lx2,panY);ln('dh-pan-t2',lx2-tk,bovY,lx2+tk,bovY);ln('dh-rem-t2',lx2-tk,panY,lx2+tk,panY);
+    sa('dh-pan-txt',{x:txX,y:bovY+panPx/2+4,'text-anchor':txR});tx('dh-pan-txt',panPx>14?ph:'');
+    const remPx=(oy+dH)-panY;
+    ln('dh-rem',lx2,panY,lx2,oy+dH);
+    sa('dh-rem-txt',{x:txX,y:panY+remPx/2+4,'text-anchor':txR});tx('dh-rem-txt',remPx>14?Math.max(0,kH-dmB-ph):'');
+  }else{
+    ['dh-bov','dh-bov-t1','dh-bov-t2','dh-pan','dh-pan-t2','dh-rem','dh-rem-t2'].forEach(id=>cl(id));
+    ['dh-bov-txt','dh-pan-txt','dh-rem-txt'].forEach(id=>tx(id,''));
+  }
+
+  // Maatlijnen breedte
+  const by2=oy+dH+34,by1=oy+dH+18;
+  ln('dw-total',ox,by2,ox+dW,by2);ln('dw-tk-l',ox,by2-tk,ox,by2+tk);ln('dw-tk-r',ox+dW,by2-tk,ox+dW,by2+tk);
+  sa('dw-total-txt',{x:ox+dW/2,y:by2+12});tx('dw-total-txt',kW);
+  if(glasAan){
+    const offPx=offX*sc,panRx=sx(offX+pw),pwPx=pw*sc;
+    ln('dw-off',ox,by1,sx(offX),by1);ln('dw-off-t1',ox,by1-tk,ox,by1+tk);ln('dw-off-t2',sx(offX),by1-tk,sx(offX),by1+tk);
+    sa('dw-off-txt',{x:ox+offPx/2,y:by1-5,'text-anchor':'middle'});tx('dw-off-txt',offPx>14?offX:'');
+    ln('dw-pan',sx(offX),by1,panRx,by1);ln('dw-pan-t2',panRx,by1-tk,panRx,by1+tk);
+    sa('dw-pan-txt',{x:sx(offX)+pwPx/2,y:by1-5,'text-anchor':'middle'});tx('dw-pan-txt',pwPx>14?pw:'');
+    const remWPx=(ox+dW)-panRx;
+    ln('dw-rem',panRx,by1,ox+dW,by1);ln('dw-rem-t2',ox+dW,by1-tk,ox+dW,by1+tk);
+    sa('dw-rem-txt',{x:panRx+remWPx/2,y:by1-5,'text-anchor':'middle'});tx('dw-rem-txt',remWPx>14?Math.max(0,kW-offX-pw):'');
+  }else{
+    ['dw-off','dw-off-t1','dw-off-t2','dw-pan','dw-pan-t2','dw-rem','dw-rem-t2'].forEach(id=>cl(id));
+    ['dw-off-txt','dw-pan-txt','dw-rem-txt'].forEach(id=>tx(id,''));
+  }
+
+  tx('st-deur',`${kW} × ${kH}`);
+  tx('st-draai',draai.charAt(0).toUpperCase()+draai.slice(1));
+  tx('st-glas',glasAan?'Ja':'Nee');
+  const actieveSch=bkds.filter(v=>v>0).length;
+  tx('st-sch',actieveSch===0?'Nee':actieveSch);
+}
+
+// ── FOTO'S / SUPABASE STORAGE ────────────────────────────────
+const FOTO_BUCKET = 'deuren-fotos';
+
+async function supaStorage(path, method, body=null, rawBody=null, contentType=null){
+  const url=localStorage.getItem('compier_sb_url');
+  const key=localStorage.getItem('compier_sb_key');
+  const h={'apikey':key,'Authorization':'Bearer '+key};
+  if(contentType)h['Content-Type']=contentType;
+  else if(!rawBody)h['Content-Type']='application/json';
+  const opts={method,headers:h};
+  if(rawBody)opts.body=rawBody;
+  else if(body)opts.body=JSON.stringify(body);
+  const r=await fetch(`${url}/storage/v1/${path}`,opts);
+  if(!r.ok)throw new Error(await r.text());
+  const txt=await r.text();return txt?JSON.parse(txt):null;
+}
+
+async function loadFotos(){
+  const d=S.activeDeur;
+  if(!d?.id)return;
+  const grid=G('foto-grid'),cnt=G('foto-count');
+  grid.innerHTML='<div style="font-size:10px;color:var(--dim);">Laden…</div>';
+  try{
+    const res=await supaStorage(`object/list/${FOTO_BUCKET}`,'POST',{
+      prefix:`${S.mNummer}/${d.id}/`,limit:50,
+      sortBy:{column:'created_at',order:'desc'}
+    });
+    const files=(res||[]).filter(f=>f.name&&f.name!=='.emptyFolderPlaceholder');
+    cnt.textContent=files.length?files.length+' foto'+(files.length!==1?'s':''):'';
+    await renderFotoGrid(files,d);
+  }catch(e){
+    grid.innerHTML='<div style="font-size:10px;color:var(--dim);">Niet beschikbaar</div>';
+    if(cnt)cnt.textContent='';
+  }
+}
+
+async function renderFotoGrid(files,d){
+  const grid=G('foto-grid');
+  grid.innerHTML='';
+  if(!files.length){
+    grid.innerHTML='<div style="font-size:10px;color:var(--dim);">Nog geen foto\'s.</div>';
+    return;
+  }
+  const url=localStorage.getItem('compier_sb_url');
+  const key=localStorage.getItem('compier_sb_key');
+  for(const f of files){
+    const path=`${S.mNummer}/${d.id}/${f.name}`;
+    const dlUrl=`${url}/storage/v1/object/authenticated/${FOTO_BUCKET}/${path}`;
+    let blobUrl=null;
+    try{
+      const r=await fetch(dlUrl,{headers:{'apikey':key,'Authorization':'Bearer '+key}});
+      if(r.ok)blobUrl=URL.createObjectURL(await r.blob());
+    }catch(e){}
+    if(!blobUrl)continue;
+    const wrap=document.createElement('div');
+    wrap.style.cssText='position:relative;width:70px;height:70px;flex-shrink:0;';
+    const fname=f.name;
+    wrap.innerHTML=`
+      <img src="${blobUrl}" style="width:70px;height:70px;object-fit:cover;border-radius:4px;border:1px solid var(--border);cursor:pointer;display:block;"
+           onclick="window.open('${blobUrl}','_blank')" loading="lazy">
+      <div onclick="deleteFoto('${fname}')" title="Verwijderen"
+           style="position:absolute;top:2px;right:2px;width:16px;height:16px;background:rgba(15,15,15,.75);border:1px solid rgba(192,57,43,.5);border-radius:3px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:8px;color:#f87171;line-height:1;">✕</div>`;
+    grid.appendChild(wrap);
+  }
+}
+
+async function uploadFoto(input){
+  const d=S.activeDeur;
+  if(!d?.id||!input.files?.length)return;
+  const file=input.files[0];
+  input.value='';
+  const ext=(file.name.split('.').pop()||'jpg').toLowerCase();
+  const fname=`${Date.now()}.${ext}`;
+  const path=`${S.mNummer}/${d.id}/${fname}`;
+  const url=localStorage.getItem('compier_sb_url');
+  const key=localStorage.getItem('compier_sb_key');
+  setLoad(true);
+  try{
+    const r=await fetch(`${url}/storage/v1/object/${FOTO_BUCKET}/${path}`,{
+      method:'POST',
+      headers:{'apikey':key,'Authorization':'Bearer '+key,'Content-Type':file.type||'image/jpeg','x-upsert':'true'},
+      body:file
+    });
+    if(!r.ok)throw new Error(await r.text());
+    toast('Foto opgeslagen ✓','success');
+    await loadFotos();
+  }catch(e){toast('Fout bij uploaden: '+e.message,'error');}
+  finally{setLoad(false);}
+}
+
+async function deleteFoto(fname){
+  const d=S.activeDeur;
+  if(!d?.id)return;
+  if(!confirm('Foto verwijderen?'))return;
+  const path=`${S.mNummer}/${d.id}/${fname}`;
+  setLoad(true);
+  try{
+    await supaStorage(`object/${FOTO_BUCKET}`,'DELETE',{prefixes:[path]});
+    toast('Foto verwijderd','success');
+    await loadFotos();
+  }catch(e){toast('Fout: '+e.message,'error');}
+  finally{setLoad(false);}
+}
+
+window.addEventListener('DOMContentLoaded',init);
+</script>
+
+<!-- PRINT OVERLAY -->
+<div id="print-overlay" style="display:none;position:fixed;inset:0;background:rgba(15,15,15,.92);z-index:500;flex-direction:column;">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0;">
+    <div style="font-size:13px;font-weight:600;">Document genereren</div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="openPrint(false)" style="background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:6px 14px;font-size:12px;cursor:pointer;font-family:inherit;">Deze deur</button>
+      <button onclick="openPrint(true)" style="background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:6px 14px;font-size:12px;cursor:pointer;font-family:inherit;">Alle deuren</button>
+      <button onclick="doPrint()" style="background:var(--accent);border:none;color:#fff;border-radius:5px;padding:6px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">PDF / Afdrukken</button>
+      <button id="mail-btn" onclick="stuurMail()" style="background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:6px 14px;font-size:12px;cursor:pointer;font-family:inherit;display:none;">✉ Bestelling mailen</button>
+      <button onclick="closePrint()" style="background:none;border:1px solid var(--border);color:var(--label);border-radius:5px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:inherit;">✕</button>
+    </div>
+  </div>
+  <div id="print-preview" style="flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;align-items:center;gap:20px;background:#555;"></div>
+</div>
+
+<style>
+@media print {
+  body > *:not(#print-frame) { display:none!important; }
+  #print-frame { display:block!important; }
+  @page { size:A4 portrait; margin:12mm; }
+}
+#print-frame { display:none; }
+.ppage {
+  width:210mm; min-height:277mm; background:#fff; color:#111;
+  font-family:'IBM Plex Sans',sans-serif; padding:12mm 12mm 10mm;
+  box-sizing:border-box; page-break-after:always; position:relative;
+}
+.ppage:last-child { page-break-after:auto; }
+.p-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8mm; border-bottom:1px solid #ddd; padding-bottom:5mm; }
+.p-logo { font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:600; letter-spacing:.05em; }
+.p-logo-sub { font-size:9px; color:#888; text-transform:uppercase; letter-spacing:.1em; margin-top:1px; }
+.p-meta { text-align:right; }
+.p-meta-project { font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; color:#E8611A; }
+.p-meta-adres { font-size:12px; color:#555; margin-top:2px; }
+.p-meta-datum { font-size:9px; color:#aaa; margin-top:2px; }
+.p-deur-titel { font-size:19px; font-weight:600; margin-bottom:8mm; }
+.p-body { display:flex; gap:6mm; }
+.p-svg-wrap { flex:1.6; display:flex; align-items:flex-start; justify-content:center; }
+.p-svg-wrap svg { width:100%; max-width:140mm; height:auto; background:white!important; }
+.p-svg-wrap svg text { }
+@media print {
+  .p-svg-wrap svg { background:white!important; }
+}
+.p-table-wrap { flex:1; }
+.p-section { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:#999; margin:5mm 0 2mm; border-bottom:1px solid #eee; padding-bottom:1mm; }
+.p-row { display:flex; justify-content:space-between; padding:2.5mm 0; border-bottom:1px solid #f5f5f5; font-size:11.5px; }
+.p-row-lbl { color:#555; }
+.p-row-val { font-family:'IBM Plex Mono',monospace; font-size:11.5px; font-weight:600; color:#111; }
+.p-row-val.highlight { color:#E8611A; }
+.p-badge { display:inline-block; font-size:8px; font-weight:700; padding:1px 6px; border-radius:3px; text-transform:uppercase; letter-spacing:.04em; }
+.p-badge-ja { background:rgba(76,175,110,.12); color:#3a8a56; border:1px solid rgba(76,175,110,.3); }
+.p-badge-nee { background:rgba(200,200,200,.2); color:#999; border:1px solid #ddd; }
+.p-footer { position:absolute; bottom:8mm; left:14mm; right:14mm; display:flex; justify-content:space-between; font-size:8px; color:#bbb; border-top:1px solid #eee; padding-top:2mm; }
+</style>
+
+<div id="print-frame"></div>
+
+<script>
+// ── PRINT ──────────────────────────────────────────────────────
+
+function openPrint(alleDeuren){
+  const overlay=document.getElementById('print-overlay');
+  overlay.style.display='flex';
+  const preview=document.getElementById('print-preview');
+  preview.innerHTML='';
+  const deuren=alleDeuren?S.deuren:[S.activeDeur];
+  deuren.filter(Boolean).forEach((d,i)=>{
+    const page=buildPrintPage(d,i+1,deuren.length);
+    preview.appendChild(page);
+  });
+  overlay._alleDeuren=alleDeuren;
+  const mailBtn=document.getElementById('mail-btn');
+  if(mailBtn)mailBtn.style.display=S.leverancierEmail?'':'none';
+}
+
+function closePrint(){
+  document.getElementById('print-overlay').style.display='none';
+}
+
+function stuurMail(){
+  if(!S.leverancierEmail)return;
+  const alleDeuren=document.getElementById('print-overlay')._alleDeuren;
+  const deuren=(alleDeuren?S.deuren:[S.activeDeur]).filter(Boolean);
+  const adres=S.project?.adres||'';
+  const onderwerp=`Bestelling deuren – ${S.mNummer}${adres?' · '+adres:''}`;
+  const body=bouwMailBody(deuren);
+  window.location.href=`mailto:${S.leverancierEmail}?subject=${encodeURIComponent(onderwerp)}&body=${encodeURIComponent(body)}`;
+}
+
+function bouwMailBody(deuren){
+  const naam=S.leverancierNaam||'';
+  const adres=S.project?.adres||'';
+  const datum=new Date().toLocaleDateString('nl-NL',{day:'2-digit',month:'2-digit',year:'numeric'});
+  let body=`Geachte ${naam},\n\nHierbij onze maatopgave voor project ${S.mNummer}${adres?' – '+adres:''}.\n\n`;
+  body+=`Datum: ${datum}\n`;
+  body+=`${'─'.repeat(50)}\n\n`;
+  deuren.forEach((d,i)=>{
+    body+=`DEUR ${d.deur_nr||i+1}: ${d.naam||'Deur '+(d.deur_nr||i+1)}\n`;
+    body+=`${'─'.repeat(30)}\n`;
+    body+=`Breedte:       ${d.breedte||930} mm\n`;
+    body+=`Hoogte:        ${d.hoogte||2315} mm\n`;
+    if(d.ral_kleur)body+=`RAL kleur:     RAL ${d.ral_kleur}\n`;
+    body+=`Draairichting: ${d.draairichting||'rechts'}\n`;
+    body+=`Arm aan:       ${{hang:'Hangzijde',sluit:'Sluitzijde',beide:'Allebei'}[d.arm||'hang']}\n`;
+    body+=`\n`;
+    body+=`Hart kruk OKD: ${d.hk_hoogte||1050} mm\n`;
+    body+=`Doornmaat:     ${d.doornmaat||60} mm\n`;
+    body+=`PC maat:       ${d.pc_maat||72} mm\n`;
+    if(d.senioren)body+=`Senioren:      Ja (cilinder boven)\n`;
+    body+=`Voorplaat slot: ${d.voorplaat_slot||20} mm\n`;
+    if(d.bksk&&d.bksk>0)body+=`BKSK:           ${d.bksk} mm\n`;
+    body+=`\n`;
+    const bkds=[d.bkd1,d.bkd2,d.bkd3,d.bkd4].filter(v=>v>0);
+    if(bkds.length){
+      body+=`Scharnierkrozing / BKD:\n`;
+      bkds.forEach((v,j)=>body+=`  BKD ${j+1}: ${v} mm\n`);
+      body+=`\n`;
+    }
+    if(d.glas_aan){
+      body+=`Glassparing:\n`;
+      body+=`  Dagmaat boven: ${d.dm_bov||140} mm\n`;
+      body+=`  Offset X:      ${d.off_x||140} mm\n`;
+      body+=`  Breedte:       ${d.glas_breedte||240} mm\n`;
+      body+=`  Hoogte:        ${d.glas_hoogte||1385} mm\n`;
+      body+=`\n`;
+    }
+    if(d.kabel_aan&&d.kabel_van>0){
+      body+=`Kabelovergang EA280: van ${d.kabel_van} mm tot ${d.kabel_tot||d.kabel_van+323} mm\n\n`;
+    }
+    if(d.bsw_aan&&d.bsw_bkd>0){
+      body+=`BSW 89×89 Connect: hart data scharnier ${d.bsw_bkd} mm\n\n`;
+    }
+    body+=`\n`;
+  });
+  body+=`Met vriendelijke groet,\nCompier\n`;
+  return body;
+}
+
+function doPrint(){
+  const alleDeuren=document.getElementById('print-overlay')._alleDeuren;
+  const deuren=alleDeuren?S.deuren:[S.activeDeur];
+  const frame=document.getElementById('print-frame');
+  frame.innerHTML='';
+  deuren.filter(Boolean).forEach((d,i)=>{
+    frame.appendChild(buildPrintPage(d,i+1,deuren.length));
+  });
+  frame.style.display='block';
+  window.print();
+  setTimeout(()=>{frame.style.display='none';frame.innerHTML='';},1000);
+}
+
+function buildPrintPage(d,nr,total){
+  const datum=new Date().toLocaleDateString('nl-NL',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const adres=S.project?.adres||'';
+
+  const page=document.createElement('div');
+  page.className='ppage';
+
+  page.innerHTML=`
+    <div class="p-header">
+      <div><div class="p-logo">COMPIER</div><div class="p-logo-sub">Inmeetrapport deuren</div></div>
+      <div class="p-meta">
+        <div class="p-meta-project">${d.m_nummer||S.mNummer}</div>
+        <div class="p-meta-adres">${adres}</div>
+        <div class="p-meta-datum">${datum} · Deur ${d.deur_nr||nr}${total>1?' van '+total:''}</div>
+      </div>
+    </div>
+    <div class="p-deur-titel">${d.naam||'Deur '+nr}</div>
+    <div class="p-body">
+      <div class="p-svg-wrap" id="psvg-${nr}"></div>
+      <div class="p-table-wrap">${buildTable(d)}</div>
+    </div>
+    <div class="p-footer">
+      <span>Compier · Inmeet tool</span>
+      <span>${d.m_nummer||S.mNummer} · ${d.naam||'Deur '+nr}</span>
+    </div>`;
+
+  // Clone de live SVG of render tijdelijk voor andere deuren
+  const svgClone = getLiveSVGForDeur(d);
+  page.querySelector(`#psvg-${nr}`).appendChild(svgClone);
+  return page;
+}
+
+function getLiveSVGForDeur(d){
+  const isActive = S.activeDeur && d.id === S.activeDeur.id;
+  if(isActive){
+    // Gebruik de live SVG direct
+    const liveSvg = document.getElementById('door-svg');
+    const clone = liveSvg.cloneNode(true);
+    clone.removeAttribute('id');
+    clone.style.background='white';
+    // Verberg de grid achtergrond
+    clone.querySelectorAll('*').forEach(el=>{
+      const fill=el.getAttribute('fill');
+      if(fill==='#0f0f0f'||fill==='var(--bg)')el.setAttribute('fill','white');
+    });
+    return clone;
+  }else{
+    // Render tijdelijk de andere deur en kloon
+    const prev = S.activeDeur;
+    populateForm(d);
+    redraw();
+    const liveSvg = document.getElementById('door-svg');
+    const clone = liveSvg.cloneNode(true);
+    clone.removeAttribute('id');
+    clone.style.background='white';
+    clone.querySelectorAll('*').forEach(el=>{
+      const fill=el.getAttribute('fill');
+      if(fill==='#0f0f0f'||fill==='var(--bg)')el.setAttribute('fill','white');
+    });
+    // Herstel actieve deur
+    if(prev){ populateForm(prev); redraw(); }
+    return clone;
+  }
+}
+
+function buildTable(d){
+  const badge=v=>`<span class="p-badge ${v?'p-badge-ja':'p-badge-nee'}">${v?'Ja':'Nee'}</span>`;
+  const row=(lbl,val,hl=false)=>`<div class="p-row"><span class="p-row-lbl">${lbl}</span><span class="p-row-val${hl?' highlight':''}">${val}</span></div>`;
+
+  const bkds=[d.bkd1,d.bkd2,d.bkd3,d.bkd4].filter(v=>v>0);
+  const schTxt=bkds.length?bkds.join(' · ')+'  mm':'—';
+
+  let html=`
+    <div class="p-section">Afmetingen</div>
+    ${row('Breedte',(d.breedte||930)+' mm',true)}
+    ${row('Hoogte',(d.hoogte||2315)+' mm',true)}
+    ${d.ral_kleur?row('RAL kleur','RAL '+d.ral_kleur,true):''}
+    ${row('Draairichting',d.draairichting||'rechts')}
+    ${row('Arm aan',({hang:'Hangzijde',sluit:'Sluitzijde',beide:'Allebei'})[d.arm||'hang']||'Hangzijde')}
+    <div class="p-section">Slot</div>
+    ${row('Hart kruk OKD',(d.hk_hoogte||1050)+' mm',true)}
+    ${row('Doornmaat (DM)',(d.doornmaat||60)+' mm')}
+    ${row('PC maat',(d.pc_maat||72)+' mm')}
+    ${d.senioren?row('Senioren','cilinder boven'):''}
+    ${row('Voorplaat slot',(d.voorplaat_slot||20)+' mm')}
+    ${(d.bksk&&d.bksk>0)?row('BKSK (bovenkant slotkast)',d.bksk+' mm',true):''}
+    <div class="p-section">Scharnierkrozing / BKD</div>
+    ${d.bkd1>0?row('BKD 1',d.bkd1+' mm'):''}
+    ${d.bkd2>0?row('BKD 2',d.bkd2+' mm'):''}
+    ${d.bkd3>0?row('BKD 3',d.bkd3+' mm'):''}
+    ${d.bkd4>0?row('BKD 4',d.bkd4+' mm'):''}
+    ${bkds.length===0?'<div class="p-row"><span class="p-row-lbl">Scharnieren</span><span class="p-row-val">—</span></div>':''}`;
+
+  if(d.glas_aan){html+=`
+    <div class="p-section">Glassparing</div>
+    ${row('Dagmaat boven',(d.dm_bov||140)+' mm')}
+    ${row('Offset X',(d.off_x||140)+' mm')}
+    ${row('Breedte',(d.glas_breedte||240)+' mm')}
+    ${row('Hoogte',(d.glas_hoogte||1385)+' mm')}`;}
+
+  if(d.kabel_aan){html+=`
+    <div class="p-section">Kabelovergang EA280</div>
+    ${row('Van BKD',(d.kabel_van||0)+' mm',true)}
+    ${row('Tot BKD',(d.kabel_tot||0)+' mm')}`;}
+
+  if(d.bsw_aan){html+=`
+    <div class="p-section">BSW 89×89 Connect</div>
+    ${row('Hart data scharnier',(d.bsw_bkd||0)+' mm',true)}`;}
+
+  return html;
+}
+
+function buildPrintSVG(d){
+  // Bouw een statische SVG van de deur voor de printpagina
+  const W=380,H=540;
+  const kW=d.breedte||930,kH=d.hoogte||2315;
+  const isL=(d.draairichting||'rechts')==='links';
+  const Z={x0:60,y0:18,x1:268,y1:480};
+  const zW=Z.x1-Z.x0,zH=Z.y1-Z.y0;
+  const sc=Math.min(zW/kW,zH/kH);
+  const dW=kW*sc,dH=kH*sc;
+  const ox=Z.x0+(zW-dW)/2,oy=Z.y0+(zH-dH)/2;
+  const sx=x=>ox+x*sc,sy=y=>oy+y*sc;
+
+  const hk=d.hk_hoogte||1050;
+  const doorn=d.doornmaat||60;
+  const pc=d.pc_maat||72;
+  const senio=d.senioren===true;
+
+  const krukY=sy(kH-hk);
+  const doornPx=doorn*sc;
+  const sluitX=isL?ox+dW:ox;
+  const doornEndX=isL?sluitX-doornPx:sluitX+doornPx;
+  const pcPx=pc*sc;
+  const cilCX=doornEndX,cilCY=senio?krukY-pcPx:krukY+pcPx;
+
+  const hangX=isL?ox-8:ox+dW-2;
+  const hangLX=isL?ox-10:ox+dW+12;
+  const hangTA=isL?'end':'start';
+
+  const bkds=[d.bkd1,d.bkd2,d.bkd3,d.bkd4];
+  const tkD=3;
+
+  // Dim lines rechts of links
+  const dimR=isL;
+  const lx1=dimR?ox+dW+52:ox-46;
+  const lx2=dimR?ox+dW+34:ox-28;
+  const txX=dimR?lx2-3:lx2+3;
+  const txAn=dimR?'end':'start';
+
+  let schSVG='';
+  bkds.forEach((val,i)=>{
+    if(!val||val===0)return;
+    const by=sy(val);
+    const colors=['#4caf6e','#4caf6e','#E8611A','#c0392b'];
+    schSVG+=`<rect x="${hangX}" y="${by-7}" width="8" height="14" rx="1.5" fill="${colors[i]}22" stroke="${colors[i]}" stroke-width="1.2"/>
+    <text x="${hangLX}" y="${by}" text-anchor="${hangTA}" dominant-baseline="middle" fill="${colors[i]}" font-size="10" font-family="IBM Plex Mono,monospace">bkd ${val}</text>`;
+  });
+
+  // Glassparing
+  let glasSVG='';
+  if(d.glas_aan){
+    const dmB=d.dm_bov||140,offX=d.off_x||140,pw=d.glas_breedte||240,ph=d.glas_hoogte||1385;
+    const gx=sx(offX),gy=sy(dmB),gw=pw*sc,gh=ph*sc;
+    const offPx=offX*sc;
+    // Glassparing blok
+    glasSVG=`<rect x="${gx}" y="${gy}" width="${gw}" height="${gh}" rx="1.5" fill="#4a90d922" stroke="#4a90d9" stroke-width="1" stroke-dasharray="4 2"/>`;
+
+    const tk2=3;
+    // Hoogte maatlijn glassparing: rechts naast het blok, binnen de deur
+    const ghx=gx+gw+10;
+    if(gh>10){
+      glasSVG+=`
+      <line x1="${ghx}" y1="${gy}" x2="${ghx}" y2="${gy+gh}" stroke="#4a90d9" stroke-width="0.8" opacity=".9"/>
+      <line x1="${ghx-tk2}" y1="${gy}" x2="${ghx+tk2}" y2="${gy}" stroke="#4a90d9" stroke-width="0.8" opacity=".9"/>
+      <line x1="${ghx-tk2}" y1="${gy+gh}" x2="${ghx+tk2}" y2="${gy+gh}" stroke="#4a90d9" stroke-width="0.8" opacity=".9"/>
+      <text x="${ghx+4}" y="${gy+gh/2+3}" text-anchor="start" fill="#4a90d9" font-size="8" font-family="IBM Plex Mono,monospace" opacity=".95">${ph}</text>`;
+    }
+    // Dagmaat boven: klein label linksboven het glasblok
+    if(gy-oy>6){
+      glasSVG+=`
+      <line x1="${ghx}" y1="${oy}" x2="${ghx}" y2="${gy}" stroke="#4a90d9" stroke-width="0.8" opacity=".7" stroke-dasharray="2 2"/>
+      <line x1="${ghx-tk2}" y1="${oy}" x2="${ghx+tk2}" y2="${oy}" stroke="#4a90d9" stroke-width="0.8" opacity=".7"/>
+      <text x="${ghx+4}" y="${oy+(gy-oy)/2+3}" text-anchor="start" fill="#4a90d9" font-size="7" font-family="IBM Plex Mono,monospace" opacity=".85">${dmB}</text>`;
+    }
+    // Breedte maatlijn glassparing: boven het glasblok
+    const gby2=gy-10;
+    if(gw>10){
+      glasSVG+=`
+      <line x1="${gx}" y1="${gby2}" x2="${gx+gw}" y2="${gby2}" stroke="#4a90d9" stroke-width="0.8" opacity=".9"/>
+      <line x1="${gx}" y1="${gby2-tk2}" x2="${gx}" y2="${gby2+tk2}" stroke="#4a90d9" stroke-width="0.8" opacity=".9"/>
+      <line x1="${gx+gw}" y1="${gby2-tk2}" x2="${gx+gw}" y2="${gby2+tk2}" stroke="#4a90d9" stroke-width="0.8" opacity=".9"/>
+      <text x="${gx+gw/2}" y="${gby2-3}" text-anchor="middle" fill="#4a90d9" font-size="8" font-family="IBM Plex Mono,monospace" opacity=".95">${pw}</text>`;
+    }
+    // Offset X: kleine lijn onder het glasblok
+    if(offPx>8){
+      glasSVG+=`
+      <line x1="${ox}" y1="${gy+gh+8}" x2="${gx}" y2="${gy+gh+8}" stroke="#4a90d9" stroke-width="0.8" opacity=".8"/>
+      <line x1="${ox}" y1="${gy+gh+5}" x2="${ox}" y2="${gy+gh+11}" stroke="#4a90d9" stroke-width="0.8" opacity=".8"/>
+      <line x1="${gx}" y1="${gy+gh+5}" x2="${gx}" y2="${gy+gh+11}" stroke="#4a90d9" stroke-width="0.8" opacity=".8"/>
+      <text x="${ox+offPx/2}" y="${gy+gh+20}" text-anchor="middle" fill="#4a90d9" font-size="7" font-family="IBM Plex Mono,monospace" opacity=".85">${offX}</text>`;
+    }
+  }
+
+  // Kabelovergang
+  let kabelSVG='';
+  if(d.kabel_aan&&d.kabel_van>0){
+    const kV=sy(d.kabel_van),kT=sy(d.kabel_tot||d.kabel_van+323);
+    const kX=isL?ox-8:ox+dW-2;
+    kabelSVG=`<rect x="${kX}" y="${Math.min(kV,kT)}" width="8" height="${Math.abs(kT-kV)}" rx="1.5" fill="#8e6bbf22" stroke="#8e6bbf" stroke-width="1.2" stroke-dasharray="3 2"/>
+    <text x="${isL?kX-3:kX+11}" y="${(kV+kT)/2}" text-anchor="${isL?'end':'start'}" dominant-baseline="middle" fill="#8e6bbf" font-size="9" font-family="IBM Plex Mono,monospace">EA280</text>`;
+  }
+
+  // BSW looplijn
+  let bswSVG='';
+  if(d.bsw_aan&&d.bsw_bkd>0){
+    const bswY=sy(d.bsw_bkd);
+    const bswX=isL?ox-8:ox+dW-2;
+    const bswLblX=isL?ox-12:ox+dW+12;
+    const bswTA=isL?'end':'start';
+    const vanX=isL?ox:ox+dW;
+    const totX=isL?ox+dW:ox;
+    const cilYbsw=senio?krukY-pcPx:krukY+pcPx;
+    bswSVG=`
+    <rect x="${bswX}" y="${bswY-7}" width="8" height="14" rx="1.5" fill="#4a90d922" stroke="#4a90d9" stroke-width="1.2"/>
+    <text x="${bswLblX}" y="${bswY}" text-anchor="${bswTA}" dominant-baseline="middle" fill="#4a90d9" font-size="8" font-family="IBM Plex Mono,monospace">data ${d.bsw_bkd}</text>
+    <line x1="${vanX}" y1="${bswY}" x2="${totX}" y2="${cilYbsw}" stroke="#4a90d9" stroke-width="1" stroke-dasharray="4 3" opacity=".8"/>`;
+  }
+
+  // Cilinder keyhole
+  const khR=4,khSW=4,khSH=7,khSR=2;
+  let cilPath='';
+  if(pc>0){
+    // Slot wijst altijd richting kruk (omlaag), ongeacht senioren
+    const yJ=cilCY+Math.sqrt(Math.max(0,khR*khR-khSR*khSR));
+    cilPath=`M ${cilCX-khSR} ${yJ} A ${khR} ${khR} 0 1 1 ${cilCX+khSR} ${yJ} L ${cilCX+khSR} ${cilCY+khR+khSH-khSR} A ${khSR} ${khSR} 0 0 1 ${cilCX-khSR} ${cilCY+khR+khSH-khSR} Z`;
+  }
+
+  // Dim lines hoogte
+  const tk=4;
+  const dhcx=dimR?lx1+7:lx1-7,dhcy=oy+dH/2;
+
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  svg.setAttribute('xmlns','http://www.w3.org/2000/svg');
+  svg.style.background='white';
+
+  svg.innerHTML=`
+    <!-- deur -->
+    <rect x="${ox}" y="${oy}" width="${dW}" height="${dH}" rx="1.5" fill="white" stroke="#4a90d9" stroke-width="2"/>
+    <!-- glassparing -->
+    ${glasSVG}
+    <!-- kabelovergang -->
+    ${kabelSVG}
+    <!-- BSW looplijn -->
+    ${bswSVG}
+    <!-- scharnieren -->
+    ${schSVG}
+    <!-- doornmaat lijn -->
+    <line x1="${sluitX}" y1="${krukY}" x2="${doornEndX}" y2="${krukY}" stroke="#E8611A" stroke-width="1" stroke-dasharray="3 2"/>
+    <line x1="${sluitX}" y1="${krukY-tkD}" x2="${sluitX}" y2="${krukY+tkD}" stroke="#E8611A" stroke-width="1.2"/>
+    <text x="${(sluitX+doornEndX)/2}" y="${krukY-5}" text-anchor="middle" fill="#E8611A" font-size="10" font-family="IBM Plex Mono,monospace">${doorn} DM</text>
+    <!-- kruk dot -->
+    <circle cx="${doornEndX}" cy="${krukY}" r="3.5" fill="none" stroke="#E8611A" stroke-width="1.2"/>
+    <circle cx="${doornEndX}" cy="${krukY}" r="1.5" fill="#E8611A"/>
+    <!-- PC lijn -->
+    ${pc>0?`<line x1="${cilCX}" y1="${krukY}" x2="${cilCX}" y2="${cilCY}" stroke="#888" stroke-width="1" stroke-dasharray="2 2"/>
+    <line x1="${cilCX-3}" y1="${krukY}" x2="${cilCX+3}" y2="${krukY}" stroke="#888" stroke-width="1.2"/>
+    <line x1="${cilCX-3}" y1="${cilCY}" x2="${cilCX+3}" y2="${cilCY}" stroke="#888" stroke-width="1.2"/>
+    <text x="${isL?cilCX-10:cilCX+10}" y="${(krukY+cilCY)/2+3}" text-anchor="${isL?'end':'start'}" fill="#888" font-size="10" font-family="IBM Plex Mono,monospace">${pc} PC</text>`:''}
+    <!-- cilinder keyhole -->
+    ${cilPath?`<path d="${cilPath}" fill="#88888822" stroke="#888" stroke-width="1.2" stroke-linejoin="round"/>`:''}
+    <!-- hoogte maat -->
+    <line x1="${lx1}" y1="${oy}" x2="${lx1}" y2="${oy+dH}" stroke="#c0392b" stroke-width="0.8"/>
+    <line x1="${lx1-tk}" y1="${oy}" x2="${lx1+tk}" y2="${oy}" stroke="#c0392b" stroke-width="0.8"/>
+    <line x1="${lx1-tk}" y1="${oy+dH}" x2="${lx1+tk}" y2="${oy+dH}" stroke="#c0392b" stroke-width="0.8"/>
+    <text x="${dhcx}" y="${dhcy}" text-anchor="middle" fill="#c0392b" font-size="11" font-family="IBM Plex Mono,monospace" transform="rotate(-90,${dhcx},${dhcy})">${kH}</text>
+    <!-- breedte maat -->
+    <line x1="${ox}" y1="${oy+dH+18}" x2="${ox+dW}" y2="${oy+dH+18}" stroke="#c0392b" stroke-width="0.8"/>
+    <line x1="${ox}" y1="${oy+dH+14}" x2="${ox}" y2="${oy+dH+22}" stroke="#c0392b" stroke-width="0.8"/>
+    <line x1="${ox+dW}" y1="${oy+dH+14}" x2="${ox+dW}" y2="${oy+dH+22}" stroke="#c0392b" stroke-width="0.8"/>
+    <text x="${ox+dW/2}" y="${oy+dH+29}" text-anchor="middle" fill="#c0392b" font-size="11" font-family="IBM Plex Mono,monospace">${kW}</text>`;
+
+  return svg;
+}
+</script>
+
+<datalist id="ral-list">
+<option value="RAL 1000">RAL 1000 Groenbeige</option>
+<option value="RAL 1001">RAL 1001 Beige</option>
+<option value="RAL 1002">RAL 1002 Zandgeel</option>
+<option value="RAL 1003">RAL 1003 Signaalgeel</option>
+<option value="RAL 1004">RAL 1004 Goudgeel</option>
+<option value="RAL 1005">RAL 1005 Honinggeel</option>
+<option value="RAL 1006">RAL 1006 Maisgeel</option>
+<option value="RAL 1007">RAL 1007 Narcissengeel</option>
+<option value="RAL 1011">RAL 1011 Bruingeel</option>
+<option value="RAL 1012">RAL 1012 Citroengeel</option>
+<option value="RAL 1013">RAL 1013 Parelwit</option>
+<option value="RAL 1014">RAL 1014 Ivoor</option>
+<option value="RAL 1015">RAL 1015 Lichtivoor</option>
+<option value="RAL 1016">RAL 1016 Zwavalgeel</option>
+<option value="RAL 1017">RAL 1017 Saffraangeel</option>
+<option value="RAL 1018">RAL 1018 Zinkgeel</option>
+<option value="RAL 1019">RAL 1019 Grijsbeige</option>
+<option value="RAL 1020">RAL 1020 Olijfgeel</option>
+<option value="RAL 1021">RAL 1021 Koolzaadgeel</option>
+<option value="RAL 1023">RAL 1023 Verkeersgeel</option>
+<option value="RAL 1024">RAL 1024 Okergeel</option>
+<option value="RAL 1026">RAL 1026 Briljantgeel</option>
+<option value="RAL 1027">RAL 1027 Currygeel</option>
+<option value="RAL 1028">RAL 1028 Meloengeel</option>
+<option value="RAL 1032">RAL 1032 Gaspeldoorngeel</option>
+<option value="RAL 1033">RAL 1033 Dahliageel</option>
+<option value="RAL 1034">RAL 1034 Pastelgeel</option>
+<option value="RAL 1035">RAL 1035 Parelbeige</option>
+<option value="RAL 1036">RAL 1036 Parelgoud</option>
+<option value="RAL 1037">RAL 1037 Zonnebloemgeel</option>
+<option value="RAL 2000">RAL 2000 Geelrood</option>
+<option value="RAL 2001">RAL 2001 Roodoranje</option>
+<option value="RAL 2002">RAL 2002 Vermiljoen</option>
+<option value="RAL 2003">RAL 2003 Pasteloranje</option>
+<option value="RAL 2004">RAL 2004 Zuiver oranje</option>
+<option value="RAL 2005">RAL 2005 Briljantoranje</option>
+<option value="RAL 2007">RAL 2007 Briljantlichtoranje</option>
+<option value="RAL 2008">RAL 2008 Helderlichtoranje</option>
+<option value="RAL 2009">RAL 2009 Verkeersoranje</option>
+<option value="RAL 2010">RAL 2010 Signaaloranje</option>
+<option value="RAL 2011">RAL 2011 Dieporanje</option>
+<option value="RAL 2012">RAL 2012 Zalmoranje</option>
+<option value="RAL 2013">RAL 2013 Parloranje</option>
+<option value="RAL 3000">RAL 3000 Vlammend rood</option>
+<option value="RAL 3001">RAL 3001 Signaalrood</option>
+<option value="RAL 3002">RAL 3002 Karmijnrood</option>
+<option value="RAL 3003">RAL 3003 Robijnrood</option>
+<option value="RAL 3004">RAL 3004 Purperrood</option>
+<option value="RAL 3005">RAL 3005 Wijnrood</option>
+<option value="RAL 3007">RAL 3007 Zwartroood</option>
+<option value="RAL 3009">RAL 3009 Oxyderood</option>
+<option value="RAL 3011">RAL 3011 Bruinrood</option>
+<option value="RAL 3012">RAL 3012 Beige rood</option>
+<option value="RAL 3013">RAL 3013 Tomaatrood</option>
+<option value="RAL 3014">RAL 3014 Antiekriood</option>
+<option value="RAL 3015">RAL 3015 Lichtroos</option>
+<option value="RAL 3016">RAL 3016 Koraalrood</option>
+<option value="RAL 3017">RAL 3017 Roos</option>
+<option value="RAL 3018">RAL 3018 Aardbeienrood</option>
+<option value="RAL 3020">RAL 3020 Verkeersrood</option>
+<option value="RAL 3022">RAL 3022 Zalmroze</option>
+<option value="RAL 3024">RAL 3024 Briljantroood</option>
+<option value="RAL 3026">RAL 3026 Briljantlicht rood</option>
+<option value="RAL 3027">RAL 3027 Frambozenrood</option>
+<option value="RAL 3028">RAL 3028 Zuiver rood</option>
+<option value="RAL 3031">RAL 3031 Oriëntrood</option>
+<option value="RAL 3032">RAL 3032 Parelrubijnrood</option>
+<option value="RAL 3033">RAL 3033 Parelroze</option>
+<option value="RAL 4001">RAL 4001 Roodlila</option>
+<option value="RAL 4002">RAL 4002 Roodviolet</option>
+<option value="RAL 4003">RAL 4003 Heideparpur</option>
+<option value="RAL 4004">RAL 4004 Bordeauxviolet</option>
+<option value="RAL 4005">RAL 4005 Blauwlila</option>
+<option value="RAL 4006">RAL 4006 Verkeerspaars</option>
+<option value="RAL 4007">RAL 4007 Purperviolet</option>
+<option value="RAL 4008">RAL 4008 Signaalviolet</option>
+<option value="RAL 4009">RAL 4009 Pastelviolet</option>
+<option value="RAL 4010">RAL 4010 Telemagenta</option>
+<option value="RAL 4011">RAL 4011 Parelpurpur</option>
+<option value="RAL 4012">RAL 4012 Parelbraambes</option>
+<option value="RAL 5000">RAL 5000 Violetblauw</option>
+<option value="RAL 5001">RAL 5001 Groenblauw</option>
+<option value="RAL 5002">RAL 5002 Ultramarijnblauw</option>
+<option value="RAL 5003">RAL 5003 Saffierblaauw</option>
+<option value="RAL 5004">RAL 5004 Zwartblauw</option>
+<option value="RAL 5005">RAL 5005 Signaalblauw</option>
+<option value="RAL 5007">RAL 5007 Briljantblauw</option>
+<option value="RAL 5008">RAL 5008 Grijsblauw</option>
+<option value="RAL 5009">RAL 5009 Azuurblauw</option>
+<option value="RAL 5010">RAL 5010 Gentiaanblauw</option>
+<option value="RAL 5011">RAL 5011 Staalblauw</option>
+<option value="RAL 5012">RAL 5012 Lichtblauw</option>
+<option value="RAL 5013">RAL 5013 Kobaltblauw</option>
+<option value="RAL 5014">RAL 5014 Duivenblauw</option>
+<option value="RAL 5015">RAL 5015 Hemelblauw</option>
+<option value="RAL 5017">RAL 5017 Verkeersblauw</option>
+<option value="RAL 5018">RAL 5018 Turkooisblaauw</option>
+<option value="RAL 5019">RAL 5019 Capriblauw</option>
+<option value="RAL 5020">RAL 5020 Oceaanblauw</option>
+<option value="RAL 5021">RAL 5021 Waterblauw</option>
+<option value="RAL 5022">RAL 5022 Nachtblauw</option>
+<option value="RAL 5023">RAL 5023 Verre blauw</option>
+<option value="RAL 5024">RAL 5024 Pastelblauw</option>
+<option value="RAL 5025">RAL 5025 Parelgentiaanblauw</option>
+<option value="RAL 5026">RAL 5026 Parelnachtblauw</option>
+<option value="RAL 6000">RAL 6000 Patinegroen</option>
+<option value="RAL 6001">RAL 6001 Smaragdgroen</option>
+<option value="RAL 6002">RAL 6002 Bladgroen</option>
+<option value="RAL 6003">RAL 6003 Olijfgroen</option>
+<option value="RAL 6004">RAL 6004 Blauwgroen</option>
+<option value="RAL 6005">RAL 6005 Mosgroen</option>
+<option value="RAL 6006">RAL 6006 Grijsolijf</option>
+<option value="RAL 6007">RAL 6007 Flessengroen</option>
+<option value="RAL 6008">RAL 6008 Bruingroen</option>
+<option value="RAL 6009">RAL 6009 Dennegroen</option>
+<option value="RAL 6010">RAL 6010 Grasgroen</option>
+<option value="RAL 6011">RAL 6011 Resedagroen</option>
+<option value="RAL 6012">RAL 6012 Zwartgroen</option>
+<option value="RAL 6013">RAL 6013 Rietgroen</option>
+<option value="RAL 6014">RAL 6014 Geeloliiif</option>
+<option value="RAL 6015">RAL 6015 Zwartoliiif</option>
+<option value="RAL 6016">RAL 6016 Turkooisgroen</option>
+<option value="RAL 6017">RAL 6017 Maigroen</option>
+<option value="RAL 6018">RAL 6018 Geelgroen</option>
+<option value="RAL 6019">RAL 6019 Witgroen</option>
+<option value="RAL 6020">RAL 6020 Chroomoxydegroen</option>
+<option value="RAL 6021">RAL 6021 Lichtgroen</option>
+<option value="RAL 6022">RAL 6022 Brunolijf</option>
+<option value="RAL 6024">RAL 6024 Verkeersgroen</option>
+<option value="RAL 6025">RAL 6025 Varenkruid</option>
+<option value="RAL 6026">RAL 6026 Opaakgroen</option>
+<option value="RAL 6027">RAL 6027 Lichtgroen</option>
+<option value="RAL 6028">RAL 6028 Dennengroen</option>
+<option value="RAL 6029">RAL 6029 Mintgroen</option>
+<option value="RAL 6032">RAL 6032 Signaalgroen</option>
+<option value="RAL 6033">RAL 6033 Mintturkoois</option>
+<option value="RAL 6034">RAL 6034 Pastelturkoois</option>
+<option value="RAL 6035">RAL 6035 Parelgroen</option>
+<option value="RAL 6036">RAL 6036 Parlopaakgroen</option>
+<option value="RAL 6037">RAL 6037 Zuiver groen</option>
+<option value="RAL 6038">RAL 6038 Briljantgroen</option>
+<option value="RAL 7000">RAL 7000 Pijlstaartgrijs</option>
+<option value="RAL 7001">RAL 7001 Zilvergrijs</option>
+<option value="RAL 7002">RAL 7002 Olijfgrijs</option>
+<option value="RAL 7003">RAL 7003 Mosgrijs</option>
+<option value="RAL 7004">RAL 7004 Signaalgrijs</option>
+<option value="RAL 7005">RAL 7005 Muisgrijs</option>
+<option value="RAL 7006">RAL 7006 Beigegrijs</option>
+<option value="RAL 7008">RAL 7008 Khaakigrijs</option>
+<option value="RAL 7009">RAL 7009 Groengrijs</option>
+<option value="RAL 7010">RAL 7010 Tentgrijs</option>
+<option value="RAL 7011">RAL 7011 IJzergrijs</option>
+<option value="RAL 7012">RAL 7012 Bazaltgrijs</option>
+<option value="RAL 7013">RAL 7013 Bruingrijs</option>
+<option value="RAL 7015">RAL 7015 Leisteengrijs</option>
+<option value="RAL 7016">RAL 7016 Antracietgrijs</option>
+<option value="RAL 7021">RAL 7021 Zwartgrijs</option>
+<option value="RAL 7022">RAL 7022 Ombergrijs</option>
+<option value="RAL 7023">RAL 7023 Betongrijs</option>
+<option value="RAL 7024">RAL 7024 Grafietgrijs</option>
+<option value="RAL 7026">RAL 7026 Granietgrijs</option>
+<option value="RAL 7030">RAL 7030 Steengrijs</option>
+<option value="RAL 7031">RAL 7031 Blauwgrijs</option>
+<option value="RAL 7032">RAL 7032 Kiezelgrijs</option>
+<option value="RAL 7033">RAL 7033 Cementgrijs</option>
+<option value="RAL 7034">RAL 7034 Geelgrijs</option>
+<option value="RAL 7035">RAL 7035 Lichtgrijs</option>
+<option value="RAL 7036">RAL 7036 Platinegrijs</option>
+<option value="RAL 7037">RAL 7037 Stofgrijs</option>
+<option value="RAL 7038">RAL 7038 Achaatgrijs</option>
+<option value="RAL 7039">RAL 7039 Kwartsgrijs</option>
+<option value="RAL 7040">RAL 7040 Venstergrijs</option>
+<option value="RAL 7042">RAL 7042 Verkeersgrijs A</option>
+<option value="RAL 7043">RAL 7043 Verkeersgrijs B</option>
+<option value="RAL 7044">RAL 7044 Zijdegrijs</option>
+<option value="RAL 7045">RAL 7045 Telegrijs 1</option>
+<option value="RAL 7046">RAL 7046 Telegrijs 2</option>
+<option value="RAL 7047">RAL 7047 Telegrijs 4</option>
+<option value="RAL 7048">RAL 7048 Parelmuisgrijs</option>
+<option value="RAL 8000">RAL 8000 Groenbruin</option>
+<option value="RAL 8001">RAL 8001 Okerbruin</option>
+<option value="RAL 8002">RAL 8002 Signaalbruin</option>
+<option value="RAL 8003">RAL 8003 Leembruin</option>
+<option value="RAL 8004">RAL 8004 Koperbruin</option>
+<option value="RAL 8007">RAL 8007 Hertbruin</option>
+<option value="RAL 8008">RAL 8008 Olijfbruin</option>
+<option value="RAL 8011">RAL 8011 Nootbruin</option>
+<option value="RAL 8012">RAL 8012 Roodbruin</option>
+<option value="RAL 8014">RAL 8014 Sepiabruin</option>
+<option value="RAL 8015">RAL 8015 Kastanjebruin</option>
+<option value="RAL 8016">RAL 8016 Mahonibruin</option>
+<option value="RAL 8017">RAL 8017 Chocoladebruin</option>
+<option value="RAL 8019">RAL 8019 Grijsbruin</option>
+<option value="RAL 8022">RAL 8022 Zwartbruin</option>
+<option value="RAL 8023">RAL 8023 Oranjbruin</option>
+<option value="RAL 8024">RAL 8024 Beige bruin</option>
+<option value="RAL 8025">RAL 8025 Lichtbruin</option>
+<option value="RAL 8028">RAL 8028 Terrabruin</option>
+<option value="RAL 8029">RAL 8029 Parelkoper</option>
+<option value="RAL 9001">RAL 9001 Crèmewit</option>
+<option value="RAL 9002">RAL 9002 Grijswit</option>
+<option value="RAL 9003">RAL 9003 Signaalwit</option>
+<option value="RAL 9004">RAL 9004 Signaalzwart</option>
+<option value="RAL 9005">RAL 9005 Gitzwart</option>
+<option value="RAL 9006">RAL 9006 Witalluminium</option>
+<option value="RAL 9007">RAL 9007 Grijsaluminium</option>
+<option value="RAL 9010">RAL 9010 Zuiver wit</option>
+<option value="RAL 9011">RAL 9011 Grafietazwart</option>
+<option value="RAL 9016">RAL 9016 Verkeerswit</option>
+<option value="RAL 9017">RAL 9017 Verkeersazwart</option>
+<option value="RAL 9018">RAL 9018 Papyruswit</option>
+<option value="RAL 9022">RAL 9022 Parellichgrijs</option>
+<option value="RAL 9023">RAL 9023 Parelddonkergrijs</option>
+</datalist>
+
+</body>
+</html>
