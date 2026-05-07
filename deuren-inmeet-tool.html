@@ -116,8 +116,9 @@ body{background:var(--bg);font-family:'IBM Plex Sans',sans-serif;color:var(--tex
 .picker-meta{display:flex;align-items:center;gap:6px;margin-top:4px;}
 .picker-datum-chip{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--yellow);background:rgba(212,160,23,.08);border:1px solid rgba(212,160,23,.2);border-radius:4px;padding:1px 6px;}
 /* RECENTE PROJECTEN */
-.recent-label{font-size:10px;font-weight:600;color:var(--label);text-transform:uppercase;letter-spacing:.1em;padding:10px 0 8px;}
-.recent-scroll{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;-ms-overflow-style:none;scrollbar-width:none;margin-bottom:8px;}
+.recent-strip{padding:8px 16px 0;flex-shrink:0;}
+.recent-label{font-size:10px;font-weight:600;color:var(--label);text-transform:uppercase;letter-spacing:.1em;padding:0 0 6px;}
+.recent-scroll{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;-ms-overflow-style:none;scrollbar-width:none;}
 .recent-scroll::-webkit-scrollbar{display:none;}
 .recent-chip{flex-shrink:0;background:var(--panel);border:1px solid var(--border);border-radius:5px;padding:7px 10px;cursor:pointer;transition:border-color .15s;}
 .recent-chip:hover{border-color:var(--accent);}
@@ -268,6 +269,10 @@ hr.div{border:none;border-top:1px solid var(--border);}
         <span class="stat-pill-num" id="stat-count-offerte">0</span><span>Offerte</span>
       </button>
     </div>
+  </div>
+  <div class="recent-strip" id="recent-strip" style="display:none;">
+    <div class="recent-label">Recente projecten</div>
+    <div class="recent-scroll" id="recent-scroll"></div>
   </div>
   <div class="picker-body" id="picker-body"></div>
 </div>
@@ -691,6 +696,7 @@ function saveRecent(p){
     recent.unshift({nummer:p.nummer,adres:p.adres||'',status:p.status||''});
     if(recent.length>8)recent=recent.slice(0,8);
     localStorage.setItem('compier_deuren_recent',JSON.stringify(recent));
+    renderRecentStrip();
   }catch(e){}
 }
 function getRecent(){
@@ -720,24 +726,25 @@ function fmtDatum(d){
   try{const dt=new Date(d);if(isNaN(dt))return null;return dt.toLocaleDateString('nl-NL',{day:'numeric',month:'short'});}
   catch(e){return null;}
 }
+function renderRecentStrip(){
+  const strip=G('recent-strip');const scroll=G('recent-scroll');
+  if(!strip||!scroll)return;
+  const recents=getRecent().filter(r=>S.allProjecten.some(p=>p.nummer===r.nummer));
+  if(!recents.length){strip.style.display='none';return;}
+  scroll.innerHTML='';
+  recents.forEach(r=>{
+    const chip=document.createElement('div');chip.className='recent-chip';
+    chip.innerHTML=`<div class="recent-chip-nr">${r.nummer}</div><div class="recent-chip-adres">${r.adres||'—'}</div>`;
+    const proj=S.allProjecten.find(p=>p.nummer===r.nummer);
+    chip.onclick=()=>kiesPicker(proj||{nummer:r.nummer,adres:r.adres,status:r.status});
+    scroll.appendChild(chip);
+  });
+  strip.style.display='block';
+}
 function renderPicker(lijst){
   const body=G('picker-body');body.innerHTML='';
   updateStatCounts(S.allProjecten);
-  // Recente row
-  const recents=getRecent().filter(r=>S.allProjecten.some(p=>p.nummer===r.nummer));
-  if(recents.length>0){
-    const lbl=document.createElement('div');lbl.className='recent-label';lbl.textContent='Recente projecten';
-    body.appendChild(lbl);
-    const scroll=document.createElement('div');scroll.className='recent-scroll';
-    recents.forEach(r=>{
-      const chip=document.createElement('div');chip.className='recent-chip';
-      chip.innerHTML=`<div class="recent-chip-nr">${r.nummer}</div><div class="recent-chip-adres">${r.adres||'—'}</div>`;
-      const proj=S.allProjecten.find(p=>p.nummer===r.nummer);
-      chip.onclick=()=>kiesPicker(proj||{nummer:r.nummer,adres:r.adres,status:r.status});
-      scroll.appendChild(chip);
-    });
-    body.appendChild(scroll);
-  }
+  renderRecentStrip();
   if(!lijst.length){
     const empty=document.createElement('div');empty.className='empty-state';
     empty.innerHTML='<p>Geen projecten gevonden.</p>';
