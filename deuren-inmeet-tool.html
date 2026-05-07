@@ -1,3 +1,19 @@
+<!--
+  ╔══════════════════════════════════════════════════════════════╗
+  ║  COMPIER — Deuren Inmeet Tool                               ║
+  ╠══════════════════════════════════════════════════════════════╣
+  ║  v1.5  2026-03-24  Afdruk terug naar window.print() —       ║
+  ║                    iframe aanpak veroorzaakte lege pagina   ║
+  ║  v1.4  2026-03-24  Afdruk: deurschets paginavullend (200mm) ║
+  ║  v1.3  2026-03-24  Ververs-knop op projectkiezer en         ║
+  ║                    deuren-lijst toegevoegd                   ║
+  ║  v1.2  2026-03-24  iOS portret: tekening verborgen,         ║
+  ║                    sidebar + rechter paneel naast elkaar     ║
+  ║  v1.1  2026-03-24  iOS responsive topbar: compact 52px,     ║
+  ║                    print-knop zichtbaar op small screens     ║
+  ║  v1.0  2026-03-24  Initiële versie                          ║
+  ╚══════════════════════════════════════════════════════════════╝
+-->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -42,6 +58,7 @@ body{background:var(--bg);font-family:'IBM Plex Sans',sans-serif;color:var(--tex
 
 /* iOS / kleine schermen — portret */
 @media (max-width:480px){
+  /* Topbar compact */
   .topbar{height:52px;padding:0 10px;}
   .deur-naam-input{width:100px;font-size:13px;}
   .project-id{display:none;}
@@ -49,6 +66,7 @@ body{background:var(--bg);font-family:'IBM Plex Sans',sans-serif;color:var(--tex
   .topbar-left{gap:7px;}
   .topbar-right{gap:6px;}
   .save-btn{padding:5px 12px;font-size:11px;}
+  /* Tekening verbergen, beide panelen naast elkaar */
   .canvas-area{display:none;}
   .sidebar{width:50%;min-width:0;}
   .right-panel{width:50%;min-width:0;}
@@ -70,6 +88,19 @@ body{background:var(--bg);font-family:'IBM Plex Sans',sans-serif;color:var(--tex
 .setup-btn{background:var(--accent);color:#fff;border:none;border-radius:5px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;letter-spacing:.01em;}
 .setup-error{font-size:11px;color:var(--red);}
 
+/* PROJECT PICKER */
+.picker-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;}
+.picker-search-wrap{padding:12px 16px 0;flex-shrink:0;}
+.picker-search{width:100%;background:var(--panel);border:1px solid var(--border);border-radius:5px;padding:8px 12px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text);outline:none;transition:border-color .15s;}
+.picker-search:focus{border-color:var(--accent);}
+.picker-card{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:border-color .15s;}
+.picker-card:hover{border-color:var(--accent);}
+.picker-nr{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);background:rgba(232,97,26,.08);border:1px solid rgba(232,97,26,.2);border-radius:4px;padding:3px 7px;flex-shrink:0;}
+.picker-info{flex:1;display:flex;flex-direction:column;gap:2px;}
+.picker-adres{font-size:13px;font-weight:500;}
+.picker-opd{font-size:11px;color:var(--dim);}
+.picker-arrow{color:var(--dim);font-size:16px;flex-shrink:0;}
+
 /* STATS STRIP */
 .stats-strip{padding:12px 16px 0;flex-shrink:0;}
 .stat-pill-group{display:flex;background:var(--panel2);border:1px solid var(--border);border-radius:5px;padding:2px;gap:2px;}
@@ -77,26 +108,14 @@ body{background:var(--bg);font-family:'IBM Plex Sans',sans-serif;color:var(--tex
 .stat-pill.active{background:var(--panel);color:var(--text);border:1px solid var(--border);}
 .stat-pill-num{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px;}
 .stat-pill-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
-
-/* PROJECT PICKER */
-.picker-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:0;}
-.picker-search-wrap{padding:12px 16px 0;flex-shrink:0;}
-.picker-search{width:100%;background:var(--panel);border:1px solid var(--border);border-radius:5px;padding:8px 12px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text);outline:none;transition:border-color .15s;}
-.picker-search::placeholder{color:var(--dim);}
-.picker-search:focus{border-color:var(--accent);}
+/* PICKER EXTRAS */
 .picker-section-header{display:flex;align-items:center;gap:6px;padding:14px 0 5px;font-size:10px;font-weight:600;color:var(--label);text-transform:uppercase;letter-spacing:.1em;}
 .picker-section-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
-.picker-card{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:border-color .15s;border-left:3px solid transparent;margin-bottom:6px;}
-.picker-card:hover{border-color:var(--accent);}
-.picker-card.s-lopend{border-left-color:var(--accent2);}
-.picker-card.s-offerte{border-left-color:var(--blue);}
-.picker-nr{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);background:rgba(232,97,26,.08);border:1px solid rgba(232,97,26,.2);border-radius:4px;padding:3px 7px;flex-shrink:0;}
 .picker-info{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0;}
 .picker-adres{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.picker-opd{font-size:11px;color:var(--dim);}
 .picker-meta{display:flex;align-items:center;gap:6px;margin-top:4px;}
 .picker-datum-chip{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--yellow);background:rgba(212,160,23,.08);border:1px solid rgba(212,160,23,.2);border-radius:4px;padding:1px 6px;}
-.picker-arrow{color:var(--dim);font-size:16px;flex-shrink:0;}
+/* RECENTE PROJECTEN */
 .recent-label{font-size:10px;font-weight:600;color:var(--label);text-transform:uppercase;letter-spacing:.1em;padding:10px 0 8px;}
 .recent-scroll{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;-ms-overflow-style:none;scrollbar-width:none;margin-bottom:8px;}
 .recent-scroll::-webkit-scrollbar{display:none;}
@@ -201,6 +220,7 @@ hr.div{border:none;border-top:1px solid var(--border);}
         <div class="setup-lbl">Anon Key</div>
         <input class="setup-input" id="inp-key" placeholder="eyJ..." autocomplete="off">
       </div>
+
       <div class="setup-field">
         <div class="setup-lbl">E-mailadres</div>
         <input class="setup-input" id="inp-email" type="email" placeholder="naam@compier.nl" autocomplete="email">
@@ -209,7 +229,6 @@ hr.div{border:none;border-top:1px solid var(--border);}
         <div class="setup-lbl">Wachtwoord</div>
         <input class="setup-input" id="inp-pass" type="password" placeholder="••••••••" autocomplete="current-password">
       </div>
-
       <div id="setup-error" class="setup-error" style="display:none"></div>
       <button class="setup-btn" onclick="saveSetup()">Inloggen &amp; starten</button>
     </div>
@@ -228,6 +247,9 @@ hr.div{border:none;border-top:1px solid var(--border);}
         <div class="project-id">Kies een project</div>
       </div>
     </div>
+    <div class="topbar-right">
+      <button id="refresh-picker-btn" onclick="refreshPicker(event)" title="Ververs projecten" style="background:none;border:none;cursor:pointer;padding:0 4px;color:var(--dim);font-size:18px;line-height:1;transition:color 0.15s;" onmouseenter="this.style.color='var(--accent)'" onmouseleave="this.style.color='var(--dim)'">↺</button>
+    </div>
   </div>
   <div class="picker-search-wrap">
     <input class="picker-search" id="picker-search" placeholder="Zoek op nummer of adres…" oninput="filterPicker()">
@@ -238,11 +260,11 @@ hr.div{border:none;border-top:1px solid var(--border);}
         <span class="stat-pill-num" id="stat-count-all">0</span><span>Totaal</span>
       </button>
       <button class="stat-pill" id="stat-pill-lopend" onclick="setStatusFilter('lopend')">
-        <span class="stat-pill-dot" style="background:#10b981"></span>
+        <span class="stat-pill-dot" style="background:#4caf6e"></span>
         <span class="stat-pill-num" id="stat-count-lopend">0</span><span>Lopend</span>
       </button>
       <button class="stat-pill" id="stat-pill-offerte" onclick="setStatusFilter('offerte')">
-        <span class="stat-pill-dot" style="background:#3b82f6"></span>
+        <span class="stat-pill-dot" style="background:#4a90d9"></span>
         <span class="stat-pill-num" id="stat-count-offerte">0</span><span>Offerte</span>
       </button>
     </div>
@@ -264,6 +286,7 @@ hr.div{border:none;border-top:1px solid var(--border);}
     </div>
     <div class="topbar-right">
       <div class="list-count" id="list-count"></div>
+      <button id="refresh-list-btn" onclick="refreshList(event)" title="Ververs deuren" style="background:none;border:none;cursor:pointer;padding:0 4px;color:var(--dim);font-size:18px;line-height:1;transition:color 0.15s;" onmouseenter="this.style.color='var(--accent)'" onmouseleave="this.style.color='var(--dim)'">↺</button>
     </div>
   </div>
   <div class="list-body" id="list-body"></div>
@@ -571,8 +594,7 @@ async function saveSetup(){
   err.style.display='none';
   try{
     const r=await fetch(`${url}/auth/v1/token?grant_type=password`,{
-      method:'POST',
-      headers:{'apikey':key,'Content-Type':'application/json'},
+      method:'POST',headers:{'apikey':key,'Content-Type':'application/json'},
       body:JSON.stringify({email,password:pass})
     });
     if(!r.ok){const e=await r.json();err.textContent=e.error_description||'Inloggen mislukt';err.style.display='';return;}
@@ -585,6 +607,28 @@ async function saveSetup(){
 }
 
 // INIT
+async function refreshPicker(e){
+  const btn=e.currentTarget;
+  btn.style.color='var(--accent)';btn.style.transition='transform 0.5s ease,color 0.15s';btn.style.transform='rotate(360deg)';
+  setLoad(true);
+  try{
+    const data=await supa('projecten?status=in.(lopend,offerte)&order=nummer.asc');
+    S.allProjecten=data||[];
+    renderPicker(S.allProjecten);
+    G('picker-search').value='';
+  }catch(e){toast('Ververs mislukt','err');}
+  finally{setLoad(false);setTimeout(()=>{btn.style.transform='';btn.style.color='';},600);}
+}
+async function refreshList(e){
+  const btn=e.currentTarget;
+  btn.style.color='var(--accent)';btn.style.transition='transform 0.5s ease,color 0.15s';btn.style.transform='rotate(360deg)';
+  setLoad(true);
+  try{
+    S.deuren=(await supa(`deuren?m_nummer=eq.${encodeURIComponent(S.mNummer)}&order=deur_nr.asc`))||[];
+    renderList();
+  }catch(e){toast('Ververs mislukt','err');}
+  finally{setLoad(false);setTimeout(()=>{btn.style.transform='';btn.style.color='';},600);}
+}
 async function init(){
   const params=new URLSearchParams(location.search);
   S.mNummer=params.get('m');
@@ -639,7 +683,7 @@ function projNaam(){
   return p.naam||p.project_naam||p.omschrijving||p.title||p.adres||S.mNummer;
 }
 
-// RECENT PROJECTS
+// RECENTE PROJECTEN
 function saveRecent(p){
   try{
     let recent=getRecent();
@@ -658,42 +702,28 @@ function getRecent(){
 function setStatusFilter(status){
   S.statusFilter=status;
   ['all','lopend','offerte'].forEach(k=>{
-    const btn=G('stat-pill-'+k);
-    if(!btn)return;
-    const isActive=(status===null&&k==='all')||(status===k);
-    btn.classList.toggle('active',isActive);
+    const btn=G('stat-pill-'+k);if(!btn)return;
+    btn.classList.toggle('active',(status===null&&k==='all')||(status===k));
   });
   filterPicker();
 }
 
 // PICKER
 function updateStatCounts(lijst){
-  const total=lijst.length;
-  const lopend=lijst.filter(p=>p.status==='lopend').length;
-  const offerte=lijst.filter(p=>p.status==='offerte').length;
   const el=id=>G(id);
-  if(el('stat-count-all'))el('stat-count-all').textContent=total;
-  if(el('stat-count-lopend'))el('stat-count-lopend').textContent=lopend;
-  if(el('stat-count-offerte'))el('stat-count-offerte').textContent=offerte;
+  if(el('stat-count-all'))el('stat-count-all').textContent=lijst.length;
+  if(el('stat-count-lopend'))el('stat-count-lopend').textContent=lijst.filter(p=>p.status==='lopend').length;
+  if(el('stat-count-offerte'))el('stat-count-offerte').textContent=lijst.filter(p=>p.status==='offerte').length;
 }
-
 function fmtDatum(d){
   if(!d)return null;
-  try{
-    const dt=new Date(d);
-    if(isNaN(dt))return null;
-    return dt.toLocaleDateString('nl-NL',{day:'numeric',month:'short'});
-  }catch(e){return null;}
+  try{const dt=new Date(d);if(isNaN(dt))return null;return dt.toLocaleDateString('nl-NL',{day:'numeric',month:'short'});}
+  catch(e){return null;}
 }
-
 function renderPicker(lijst){
-  const body=G('picker-body');
-  body.innerHTML='';
-
-  // Stats bijwerken op basis van de volledige lijst (voor totaaltellingen)
+  const body=G('picker-body');body.innerHTML='';
   updateStatCounts(S.allProjecten);
-
-  // Recent row
+  // Recente row
   const recents=getRecent().filter(r=>S.allProjecten.some(p=>p.nummer===r.nummer));
   if(recents.length>0){
     const lbl=document.createElement('div');lbl.className='recent-label';lbl.textContent='Recente projecten';
@@ -708,28 +738,23 @@ function renderPicker(lijst){
     });
     body.appendChild(scroll);
   }
-
   if(!lijst.length){
     const empty=document.createElement('div');empty.className='empty-state';
     empty.innerHTML='<p>Geen projecten gevonden.</p>';
     body.appendChild(empty);return;
   }
-
-  // Groepeer op status
+  // Groepeer per status
   const groepen=[
-    {sleutel:'lopend',label:'Lopend',kleur:'#10b981',items:lijst.filter(p=>p.status==='lopend')},
-    {sleutel:'offerte',label:'Offerte',kleur:'#3b82f6',items:lijst.filter(p=>p.status==='offerte')},
-    {sleutel:'overig',label:'Overig',kleur:'#9ca3af',items:lijst.filter(p=>p.status!=='lopend'&&p.status!=='offerte')}
+    {sleutel:'lopend',label:'Lopend',kleur:'#4caf6e',items:lijst.filter(p=>p.status==='lopend')},
+    {sleutel:'offerte',label:'Offerte',kleur:'#4a90d9',items:lijst.filter(p=>p.status==='offerte')},
+    {sleutel:'overig',label:'Overig',kleur:'#666666',items:lijst.filter(p=>p.status!=='lopend'&&p.status!=='offerte')}
   ].filter(g=>g.items.length>0);
-
   groepen.forEach(g=>{
     const header=document.createElement('div');header.className='picker-section-header';
-    header.innerHTML=`<span class="picker-section-dot" style="background:${g.kleur}"></span>${g.label} <span style="font-weight:400;color:var(--muted);margin-left:2px;">(${g.items.length})</span>`;
+    header.innerHTML=`<span class="picker-section-dot" style="background:${g.kleur}"></span>${g.label} <span style="font-weight:400;margin-left:2px;">(${g.items.length})</span>`;
     body.appendChild(header);
-
     g.items.forEach(p=>{
-      const card=document.createElement('div');
-      card.className='picker-card s-'+g.sleutel;
+      const card=document.createElement('div');card.className='picker-card';
       const datumStr=fmtDatum(p.datum);
       card.innerHTML=`
         <div class="picker-nr">${p.nummer||'—'}</div>
@@ -752,9 +777,7 @@ function filterPicker(){
     (p.adres||'').toLowerCase().includes(q)||
     (p.opdrachtgever||'').toLowerCase().includes(q)
   );
-  if(S.statusFilter){
-    gefilterd=gefilterd.filter(p=>p.status===S.statusFilter);
-  }
+  if(S.statusFilter)gefilterd=gefilterd.filter(p=>p.status===S.statusFilter);
   renderPicker(gefilterd);
 }
 
@@ -1255,7 +1278,7 @@ window.addEventListener('DOMContentLoaded',init);
 @media print {
   body > *:not(#print-frame) { display:none!important; }
   #print-frame { display:block!important; }
-  @page { size:A4 portrait; margin:12mm; }
+  @page { size:A4 portrait; margin:10mm 10mm 12mm; }
 }
 #print-frame { display:none; }
 .ppage {
@@ -1272,12 +1295,11 @@ window.addEventListener('DOMContentLoaded',init);
 .p-meta-adres { font-size:12px; color:#555; margin-top:2px; }
 .p-meta-datum { font-size:9px; color:#aaa; margin-top:2px; }
 .p-deur-titel { font-size:19px; font-weight:600; margin-bottom:8mm; }
-.p-body { display:flex; gap:6mm; }
-.p-svg-wrap { flex:1.6; display:flex; align-items:flex-start; justify-content:center; }
-.p-svg-wrap svg { width:100%; max-width:140mm; height:auto; background:white!important; }
-.p-svg-wrap svg text { }
+.p-body { display:flex; gap:8mm; align-items:flex-start; }
+.p-svg-wrap { flex:0 0 auto; display:flex; align-items:flex-start; justify-content:center; }
+.p-svg-wrap svg { height:200mm; width:auto; max-width:100mm; background:white!important; }
 @media print {
-  .p-svg-wrap svg { background:white!important; }
+  .p-svg-wrap svg { background:white!important; height:200mm; width:auto; }
 }
 .p-table-wrap { flex:1; }
 .p-section { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:#999; margin:5mm 0 2mm; border-bottom:1px solid #eee; padding-bottom:1mm; }
