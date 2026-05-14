@@ -1,6 +1,12 @@
 /* ============================================================
    COMPIER Dashboard — App logica
-   v1.9 | 2026-04-02
+   v2.0 | 2026-05-14
+   Wijzigingen:
+   - Aandacht-sectie: wacht-projecten met verstreken datum automatisch bovenaan
+   - Badge teller op Wacht-statistiek in header
+   - created_at kolom toegevoegd in Supabase, projecten nieuwste eerst
+   - Toegevoegd kolom in tabel, sorteerbaar
+   - Aandacht-sectie minimaliseerbaar via toggle knop
    ============================================================ */
 
 // ── Constanten ────────────────────────────────────────────
