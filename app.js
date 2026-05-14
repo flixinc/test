@@ -363,12 +363,20 @@ function fmt(ds) {
 }
 
 // ── Aandacht sectie ───────────────────────────────────────
+let aandachtIngeklapt = false;
+function toggleAandacht() {
+  aandachtIngeklapt = !aandachtIngeklapt;
+  document.getElementById('aandacht-items').classList.toggle('collapsed', aandachtIngeklapt);
+  document.getElementById('aandacht-toggle').textContent = aandachtIngeklapt ? '▼' : '▲';
+}
 function renderAandacht(lijst) {
   const wrap = document.getElementById('aandacht-wrap');
   if (!wrap) return;
   if (!lijst.length) { wrap.style.display = 'none'; return; }
   wrap.style.display = 'block';
   document.getElementById('aandacht-count').textContent = lijst.length;
+  document.getElementById('aandacht-items').classList.toggle('collapsed', aandachtIngeklapt);
+  document.getElementById('aandacht-toggle').textContent = aandachtIngeklapt ? '▼' : '▲';
   document.getElementById('aandacht-items').innerHTML = lijst.map(p => `
     <div class="aandacht-card" onclick="openModal(${p.id})">
       <div class="aandacht-card-top">

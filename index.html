@@ -206,9 +206,10 @@
 <div id="view-projecten">
   <!-- Aandacht nodig sectie -->
   <div id="aandacht-wrap" style="display:none">
-    <div class="aandacht-header">
+    <div class="aandacht-header" onclick="toggleAandacht()" style="cursor:pointer">
       <span class="aandacht-titel">⚠ Aandacht nodig</span>
       <span class="aandacht-sub">Wacht-projecten met verstreken actiedatum — <span id="aandacht-count">0</span> project(en)</span>
+      <button class="aandacht-toggle" id="aandacht-toggle" title="Minimaliseer">▲</button>
     </div>
     <div class="aandacht-items" id="aandacht-items"></div>
   </div>
