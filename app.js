@@ -277,7 +277,7 @@ Velden:
 - nummer: kenmerk of referentienummer (bijv. "M2603 0024"), of leeg als niet aanwezig
 - adres: volledig werklocatie-adres (straat + huisnummer + postcode + plaats)
 - ruimte: ruimtenummer zoals letterlijk vermeld in de bon, vaak aangeduid als "ruimtenummer", "ruimte", "lokaal" of "kamer" (bijv. "3.12", "hal 2e verdieping"). Geef de exacte waarde terug, of leeg als niet aanwezig. BELANGRIJK: verwerk het ruimtenummer ALLEEN hier, nooit in omschrijving
-- opdrachtgever: de organisatie die de opdracht verleent aan Compier. Dit is NOOIT Compier zelf. Kijk naar de afzender, de ondertekening of de organisatienaam bij het adres van de opdrachtgever. Gebruik de overkoepelende naam, niet een afdeling zoals 'Servicedesk Facilitair'.
+- opdrachtgever: de organisatie die de opdracht verleent aan Compier. Dit is NOOIT Compier zelf. Kijk naar de afzender, de ondertekening of de organisatienaam bij het adres van de opdrachtgever. Gebruik de overkoepelende naam, niet een afdeling zoals 'Servicedesk Facilitair'. Bekende opdrachtgevers (gebruik exact deze spelling, ook als de bon het anders schrijft): 'Prinsenstichting'.
 - contact: de naam die onder "Met vriendelijke groet" staat (de ondertekenaar) plus diens telefoonnummer, formaat "Naam — telefoonnummer"
 - aanmelder: de contactpersoon op de werklocatie (bijv. vermeld als "Naam aanmelder" of "contactpersoon ter plaatse"), formaat "Naam — telefoonnummer"
 - omschrijving: volledige omschrijving van de werkzaamheden of gevraagde offerte, max 400 tekens. Vermeld hier GEEN ruimtenummer (dat gaat in het ruimte-veld)
@@ -291,6 +291,18 @@ ${tekst.substring(0, 4000)}`
     if (data.error) throw new Error(data.error.message);
     const raw    = data.content[0].text.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(raw);
+
+    // Normaliseer bekende opdrachtgevers (vangnet voor spellingsvariaties door AI)
+    const OPDRACHTGEVER_NORMALISATIE = {
+      'princes stichting': 'Prinsenstichting',
+      'prinsen stichting': 'Prinsenstichting',
+      'de prinsenstichting': 'Prinsenstichting',
+    };
+    if (parsed.opdrachtgever) {
+      const key = parsed.opdrachtgever.toLowerCase().trim();
+      parsed.opdrachtgever = OPDRACHTGEVER_NORMALISATIE[key] || parsed.opdrachtgever;
+    }
+
     const geldig = ['offerte','lopend','wacht','wacht-reactie','wacht-akkoord','klaar'];
     if (parsed.status && geldig.includes(parsed.status)) document.getElementById('f-status').value = parsed.status;
     if (parsed.nummer)        document.getElementById('f-nummer').value = parsed.nummer;
@@ -1525,18 +1537,4 @@ function deelKaart() {
           border:1px solid ${isLight ? '#d0d0ce' : '#2a2a2a'};
           color:${isLight ? '#1a1a1a' : '#e8e8e8'};
           font-size:13px; font-weight:600; cursor:pointer;
-          text-decoration:none; letter-spacing:0.02em;
-        }
-        .terug:hover { border-color:#E8611A; color:#E8611A; }
-      </style></head><body>
-      <img src="${imgUrl}" alt="${p.nummer}">
-      <p class="hint">Houd de afbeelding ingedrukt om op te slaan of te delen</p>
-      <a class="terug" onclick="window.close()" href="#">← Terug naar dashboard</a>
-    </body></html>`);
-    win.document.close();
-  }
-}
-
-// ── Init ──────────────────────────────────────────────────
-initAccentSwatches();
-initAuth();
+          text-decoration:none; letter-spacing:0.02e
