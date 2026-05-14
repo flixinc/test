@@ -172,7 +172,7 @@ async function sbFetch(path, method = 'GET', body = null) {
 async function laadProjecten() {
   if (!sbUrl || !sbKey) { render(); return; }
   try {
-    const data = await sbFetch('projecten?select=*,created_at&order=id.desc');
+    const data = await sbFetch('projecten?order=id.desc');
     if (Array.isArray(data)) {
       projecten = data;
       if (projecten.length > 0) nextId = Math.max(...projecten.map(p => p.id)) + 1;
@@ -419,7 +419,6 @@ function render() {
             ${p.datum ? `<div class="actie-date ${dateClass(p.datum)}">${fmt(p.datum)}</div>` : ''}
           `}
         </td>
-        <td><div class="proj-client">${fmtCreated(p.created_at)}</div></td>
       </tr>`).join('');
   }
   document.getElementById('cards').innerHTML = data.map(p => `
