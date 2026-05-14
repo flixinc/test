@@ -147,7 +147,6 @@ function toonApp() {
   document.getElementById('login-screen').style.display = 'none';
   initApiKey();
   laadProjecten();
-  laadMedewerkers();
 }
 
 // ── Supabase helpers ──────────────────────────────────────
@@ -170,22 +169,10 @@ async function sbFetch(path, method = 'GET', body = null) {
   return method === 'DELETE' ? null : res.json();
 }
 
-async function laadMedewerkers() {
-  const select = document.getElementById('f-toegewezen');
-  if (!select || !sbUrl || !sbKey) return;
-  try {
-    const data = await sbFetch('medewerkers?order=naam.asc');
-    select.length = 0;
-    const leeg = new Option('— Niet toegewezen —', '');
-    select.add(leeg);
-    (data || []).forEach(m => select.add(new Option(m.naam, m.email)));
-  } catch(e) { /* tabel bestaat nog niet of lege lijst */ }
-}
-
 async function laadProjecten() {
   if (!sbUrl || !sbKey) { render(); return; }
   try {
-    const data = await sbFetch('projecten?order=id.asc');
+    const data = await sbFetch('projecten?order=created_at.desc');
     if (Array.isArray(data)) {
       projecten = data;
       if (projecten.length > 0) nextId = Math.max(...projecten.map(p => p.id)) + 1;
@@ -289,7 +276,6 @@ Velden:
 - aanmelder: de contactpersoon op de werklocatie (bijv. vermeld als "Naam aanmelder" of "contactpersoon ter plaatse"), formaat "Naam — telefoonnummer"
 - omschrijving: volledige omschrijving van de werkzaamheden of gevraagde offerte, max 400 tekens. Vermeld hier GEEN ruimtenummer (dat gaat in het ruimte-veld)
 - status: bepaal zelf op basis van de tekst: "offerte" als het een prijsaanvraag of offerteverzoek is, "lopend" als het een opdracht of werkopdracht is
-- schilder: true als de werkzaamheden (deels) schilderwerk betreffen (verven, schilderen, lakken, coating, behangen) of als er RAL-kleurnummers worden genoemd (bijv. RAL 9010), anders false
 Tekst:
 ${tekst.substring(0, 4000)}`
         }]
@@ -301,7 +287,6 @@ ${tekst.substring(0, 4000)}`
     const parsed = JSON.parse(raw);
     const geldig = ['offerte','lopend','wacht','wacht-reactie','wacht-akkoord','klaar'];
     if (parsed.status && geldig.includes(parsed.status)) document.getElementById('f-status').value = parsed.status;
-    if (parsed.schilder === true) document.getElementById('f-schilder').checked = true;
     if (parsed.nummer)        document.getElementById('f-nummer').value = parsed.nummer;
     if (parsed.adres)         document.getElementById('f-adres').value = parsed.adres;
     if (parsed.ruimte)        document.getElementById('f-ruimte').value = parsed.ruimte;
@@ -321,19 +306,46 @@ ${tekst.substring(0, 4000)}`
 }
 
 // ── Filter & render helpers ───────────────────────────────
+function getAandacht() {
+  // Wacht-projecten met een verstreken actiedatum → vragen om aandacht
+  const today = new Date(); today.setHours(0,0,0,0);
+  return projecten.filter(p => {
+    if (!p.status?.startsWith('wacht')) return false;
+    if (!p.datum) return false;
+    return new Date(p.datum) < today;
+  });
+}
+
 function getFiltered() {
   return projecten.filter(p => {
     const matchFilter = activeFilter === 'alle' || p.status === activeFilter ||
-      (activeFilter === 'wacht' && p.status?.startsWith('wacht')) ||
-      (activeFilter === 'schilder' && p.schilder === true);
+      (activeFilter === 'wacht' && p.status?.startsWith('wacht'));
     const q = searchQuery.toLowerCase();
     const matchSearch = !q || [p.nummer, p.adres, p.ruimte, p.opdrachtgever, p.actie, p.notitie, p.contact]
       .some(v => (v||'').toLowerCase().includes(q));
     return matchFilter && matchSearch;
   }).sort((a, b) => {
+    if (sortKey === 'datum' || sortKey === 'created_at') {
+      const av = a[sortKey] || '', bv = b[sortKey] || '';
+      return av < bv ? sortDir : av > bv ? -sortDir : 0;
+    }
     let av = a[sortKey] || '', bv = b[sortKey] || '';
     return av < bv ? -sortDir : av > bv ? sortDir : 0;
   });
+}
+
+function fmtCreated(ds) {
+  if (!ds) return '—';
+  const d = new Date(ds);
+  return d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function dagenGeleden(ds) {
+  if (!ds) return null;
+  const diff = Math.floor((Date.now() - new Date(ds)) / 86400000);
+  if (diff === 0) return 'vandaag';
+  if (diff === 1) return '1 dag geleden';
+  return `${diff} dagen geleden`;
 }
 
 function dateClass(ds) {
@@ -350,12 +362,39 @@ function fmt(ds) {
   return hasTime ? `${d}-${m}-${y} ${ds.slice(11, 16)}` : `${d}-${m}-${y}`;
 }
 
+// ── Aandacht sectie ───────────────────────────────────────
+function renderAandacht(lijst) {
+  const wrap = document.getElementById('aandacht-wrap');
+  if (!wrap) return;
+  if (!lijst.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  document.getElementById('aandacht-count').textContent = lijst.length;
+  document.getElementById('aandacht-items').innerHTML = lijst.map(p => `
+    <div class="aandacht-card" onclick="openModal(${p.id})">
+      <div class="aandacht-card-top">
+        <span class="proj-num" style="font-size:11px">${p.nummer}</span>
+        <span class="status-badge s-wacht" style="font-size:10px"><span class="status-dot"></span>${STATUS_LABELS[p.status]}</span>
+        <span class="aandacht-verstreken">${dagenGeleden(p.datum)} verstreken</span>
+      </div>
+      <div class="aandacht-card-body">
+        <span class="aandacht-adres">${p.adres}</span>
+        ${p.actie ? `<span class="aandacht-actie">→ ${p.actie}</span>` : ''}
+      </div>
+    </div>`).join('');
+}
+
 // ── Render ────────────────────────────────────────────────
 function render() {
   const data = getFiltered();
+  const aandacht = getAandacht();
   document.getElementById('stat-lopend').textContent = projecten.filter(p => p.status === 'lopend').length;
   document.getElementById('stat-wacht').textContent  = projecten.filter(p => p.status?.startsWith('wacht')).length;
   document.getElementById('stat-totaal').textContent = projecten.filter(p => p.status !== 'klaar').length;
+  // Badge: aandacht teller op wacht-stat
+  const badge = document.getElementById('stat-wacht-badge');
+  if (badge) { badge.textContent = aandacht.length; badge.style.display = aandacht.length > 0 ? 'inline-flex' : 'none'; }
+  // Aandacht-sectie
+  renderAandacht(aandacht);
   const empty = document.getElementById('empty');
   const tbody = document.getElementById('tbody');
   if (data.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; }
@@ -363,10 +402,7 @@ function render() {
     empty.style.display = 'none';
     tbody.innerHTML = data.map(p => `
       <tr onclick="openModal(${p.id})">
-        <td>
-          <div class="proj-num">${p.nummer}</div>
-          ${p.schilder ? '<span class="schilder-badge">🖌 Schilder</span>' : ''}
-        </td>
+        <td><div class="proj-num">${p.nummer}</div></td>
         <td>
           <div class="proj-addr">${p.adres}</div>
           ${p.notitie ? `<div class="proj-client">${p.notitie.substring(0,55)}${p.notitie.length>55?'…':''}</div>` : ''}
@@ -383,16 +419,14 @@ function render() {
             ${p.datum ? `<div class="actie-date ${dateClass(p.datum)}">${fmt(p.datum)}</div>` : ''}
           `}
         </td>
+        <td><div class="proj-client">${fmtCreated(p.created_at)}</div></td>
       </tr>`).join('');
   }
   document.getElementById('cards').innerHTML = data.map(p => `
     <div class="card" onclick="openModal(${p.id})">
       <div class="card-top">
         <span class="card-num">${p.nummer}</span>
-        <div style="display:flex;align-items:center;gap:6px">
-          ${p.schilder ? '<span class="schilder-badge">🖌 Schilder</span>' : ''}
-          <span class="status-badge ${STATUS_CLASS[p.status]}"><span class="status-dot"></span>${STATUS_LABELS[p.status]}</span>
-        </div>
+        <span class="status-badge ${STATUS_CLASS[p.status]}"><span class="status-dot"></span>${STATUS_LABELS[p.status]}</span>
       </div>
       <div class="card-addr">${p.adres}</div>
       <div class="card-client">${p.opdrachtgever}${p.contact ? ' · ' + p.contact.split('—')[0].trim() : ''}</div>
@@ -472,8 +506,6 @@ function openModal(id) {
     document.getElementById('f-contact').value = p.contact || '';
     document.getElementById('f-aanmelder').value = p.aanmelder || '';
     document.getElementById('f-notitie').value = p.notitie || '';
-    document.getElementById('f-schilder').checked = !!p.schilder;
-    document.getElementById('f-toegewezen').value = p.toegewezen_aan || '';
     renderActieLog(p.acties_log || []);
     document.querySelectorAll('.actie-chip').forEach(c => {
       c.classList.toggle('selected', c.textContent === (p.actie || ''));
@@ -485,8 +517,6 @@ function openModal(id) {
     laadDeuren(p.nummer);
   } else {
     ['f-nummer','f-adres','f-ruimte','f-opdrachtgever','f-actie','f-contact','f-aanmelder','f-notitie'].forEach(i => document.getElementById(i).value = '');
-    document.getElementById('f-schilder').checked = false;
-    document.getElementById('f-toegewezen').value = '';
     document.getElementById('f-status').value = 'lopend';
     onStatusChange('lopend');
     document.getElementById('f-datum').value = '';
@@ -664,9 +694,7 @@ async function saveProject() {
     datum:         document.getElementById('f-datum').value,
     contact:       document.getElementById('f-contact').value.trim(),
     aanmelder:     document.getElementById('f-aanmelder').value.trim(),
-    notitie:        document.getElementById('f-notitie').value.trim(),
-    schilder:       document.getElementById('f-schilder').checked,
-    toegewezen_aan: document.getElementById('f-toegewezen').value,
+    notitie:       document.getElementById('f-notitie').value.trim(),
   };
   if (!p.nummer || !p.adres) { alert('Vul minimaal kenmerk en adres in.'); return; }
   const dubbel = projecten.find(x => x.nummer.trim().toLowerCase() === p.nummer.toLowerCase() && x.id !== editingId);
