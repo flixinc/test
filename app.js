@@ -172,7 +172,7 @@ async function sbFetch(path, method = 'GET', body = null) {
 async function laadProjecten() {
   if (!sbUrl || !sbKey) { render(); return; }
   try {
-    const data = await sbFetch('projecten?order=created_at.desc');
+    const data = await sbFetch('projecten?select=*,created_at&order=id.desc');
     if (Array.isArray(data)) {
       projecten = data;
       if (projecten.length > 0) nextId = Math.max(...projecten.map(p => p.id)) + 1;
