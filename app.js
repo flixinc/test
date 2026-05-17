@@ -404,7 +404,7 @@ function renderAandacht(lijst) {
       </div>
       <div class="aandacht-card-body">
         <span class="aandacht-adres">${p.adres}</span>
-        ${p.actie ? `<span class="aandacht-actie">→ ${p.actie}</span>` : ''}
+        ${p.actie ? '<span class="aandacht-actie">→ ' + p.actie + '</span>' : ''}
       </div>
     </div>`).join('');
 }
