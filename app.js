@@ -277,7 +277,7 @@ Velden:
 - nummer: kenmerk of referentienummer (bijv. "M2603 0024"), of leeg als niet aanwezig
 - adres: volledig werklocatie-adres (straat + huisnummer + postcode + plaats)
 - ruimte: ruimtenummer zoals letterlijk vermeld in de bon, vaak aangeduid als "ruimtenummer", "ruimte", "lokaal" of "kamer" (bijv. "3.12", "hal 2e verdieping"). Geef de exacte waarde terug, of leeg als niet aanwezig. BELANGRIJK: verwerk het ruimtenummer ALLEEN hier, nooit in omschrijving
-- opdrachtgever: de organisatie die de opdracht verleent aan Compier. Dit is NOOIT Compier zelf. Kijk naar de afzender, de ondertekening of de organisatienaam bij het adres van de opdrachtgever. Gebruik de overkoepelende naam, niet een afdeling zoals 'Servicedesk Facilitair'. Schrijf samengestelde organisatienamen altijd aaneengesloten zoals ze in de tekst staan — splits geen eigennamen op.
+- opdrachtgever: de organisatie die de opdracht verleent aan Compier. Dit is NOOIT Compier zelf. Kijk naar de afzender, de ondertekening of de organisatienaam bij het adres van de opdrachtgever. Gebruik de overkoepelende naam, niet een afdeling zoals 'Servicedesk Facilitair'.
 - contact: de naam die onder "Met vriendelijke groet" staat (de ondertekenaar) plus diens telefoonnummer, formaat "Naam — telefoonnummer"
 - aanmelder: de contactpersoon op de werklocatie (bijv. vermeld als "Naam aanmelder" of "contactpersoon ter plaatse"), formaat "Naam — telefoonnummer"
 - omschrijving: volledige omschrijving van de werkzaamheden of gevraagde offerte, max 400 tekens. Vermeld hier GEEN ruimtenummer (dat gaat in het ruimte-veld)
@@ -291,18 +291,6 @@ ${tekst.substring(0, 4000)}`
     if (data.error) throw new Error(data.error.message);
     const raw    = data.content[0].text.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(raw);
-
-    // Normaliseer opdrachtgever: vergelijk met bekende namen uit Supabase (fuzzy match op kleine letters, spaties genegeerd)
-    if (parsed.opdrachtgever) {
-      try {
-        const { data: bekende } = await sb.from('projecten').select('opdrachtgever').neq('opdrachtgever', '').order('opdrachtgever');
-        const uniek = [...new Set((bekende || []).map(r => r.opdrachtgever).filter(Boolean))];
-        const genormaliseerd = parsed.opdrachtgever.toLowerCase().replace(/\s+/g, '');
-        const match = uniek.find(naam => naam.toLowerCase().replace(/\s+/g, '') === genormaliseerd);
-        if (match) parsed.opdrachtgever = match;
-      } catch (_) { /* stille fallback: gebruik AI-waarde */ }
-    }
-
     const geldig = ['offerte','lopend','wacht','wacht-reactie','wacht-akkoord','klaar'];
     if (parsed.status && geldig.includes(parsed.status)) document.getElementById('f-status').value = parsed.status;
     if (parsed.nummer)        document.getElementById('f-nummer').value = parsed.nummer;
@@ -1268,6 +1256,18 @@ function kopieelRAL(nr, naam) {
 }
 
 // ── PWA / Ververs ─────────────────────────────────────────
+async function clearCacheEnHerlaad() {
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+      const cacheKeys = await caches.keys();
+      await Promise.all(cacheKeys.map(k => caches.delete(k)));
+    }
+  } catch(e) {}
+  location.reload(true);
+}
+
 async function forceerVervers(e) {
   const btn = e.currentTarget;
   btn.style.color = 'var(--orange)';
@@ -1533,4 +1533,22 @@ function deelKaart() {
         .terug {
           display:inline-flex; align-items:center; gap:6px;
           padding:10px 20px; border-radius:6px;
-          background:${isLigh
+          background:${isLight ? '#e6e6e4' : '#1e1e1e'};
+          border:1px solid ${isLight ? '#d0d0ce' : '#2a2a2a'};
+          color:${isLight ? '#1a1a1a' : '#e8e8e8'};
+          font-size:13px; font-weight:600; cursor:pointer;
+          text-decoration:none; letter-spacing:0.02em;
+        }
+        .terug:hover { border-color:#E8611A; color:#E8611A; }
+      </style></head><body>
+      <img src="${imgUrl}" alt="${p.nummer}">
+      <p class="hint">Houd de afbeelding ingedrukt om op te slaan of te delen</p>
+      <a class="terug" onclick="window.close()" href="#">← Terug naar dashboard</a>
+    </body></html>`);
+    win.document.close();
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────
+initAccentSwatches();
+initAuth();
