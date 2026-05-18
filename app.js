@@ -260,19 +260,12 @@ async function uitLezenBon() {
   const resultEl = document.getElementById('ai-result');
   resultEl.className = 'ai-result';
   try {
-    const response = await fetch('https://damp-surf-e962compier-proxy.rayflix.workers.dev', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 700,
-        messages: [{
-          role: 'user',
-          content: `Dit is een Nederlandse opdrachtbon of offerte-aanvraag van Compier O&A. Extraheer de volgende velden en geef ALLEEN een geldig JSON-object terug, geen uitleg, geen markdown.
+    const requestBody = JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 700,
+      messages: [{
+        role: 'user',
+        content: `Dit is een Nederlandse opdrachtbon of offerte-aanvraag van Compier O&A. Extraheer de volgende velden en geef ALLEEN een geldig JSON-object terug, geen uitleg, geen markdown.
 Velden:
 - nummer: kenmerk of referentienummer (bijv. "M2603 0024"), of leeg als niet aanwezig
 - adres: volledig werklocatie-adres (straat + huisnummer + postcode + plaats)
@@ -284,10 +277,26 @@ Velden:
 - status: bepaal zelf op basis van de tekst: "offerte" als het een prijsaanvraag of offerteverzoek is, "lopend" als het een opdracht of werkopdracht is
 Tekst:
 ${tekst.substring(0, 4000)}`
-        }]
-      })
+      }]
     });
-    const data = await response.json();
+    let data;
+    for (let poging = 0; poging < 2; poging++) {
+      const response = await fetch('https://damp-surf-e962compier-proxy.rayflix.workers.dev', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: requestBody,
+      });
+      data = await response.json();
+      if (data.error?.type === 'overloaded_error' && poging === 0) {
+        await new Promise(r => setTimeout(r, 2000));
+        continue;
+      }
+      break;
+    }
     if (data.error) throw new Error(data.error.message);
     const raw    = data.content[0].text.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(raw);
