@@ -64,7 +64,7 @@ body {
   display:none; position:absolute; top:calc(100% + 10px); right:0;
   background:var(--surface); border:1px solid var(--border); border-radius:8px;
   padding:12px; z-index:300; box-shadow:0 6px 24px rgba(0,0,0,0.35);
-  min-width:180px;
+  min-width:220px;
 }
 .accent-panel.open { display:block; }
 .accent-panel-label { font-size:10px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:8px; }
@@ -648,37 +648,6 @@ textarea { resize: vertical; min-height: 56px; }
 .geo-status.hidden { opacity: 0; }
 .loc-error { padding: 16px 14px; font-size: 12px; color: var(--red); text-align: center; }
 
-/* ── Schilder badge & toggle ────────────────────────────── */
-.schilder-badge {
-  display: inline-flex; align-items: center; gap: 3px;
-  background: var(--surface2); color: var(--muted);
-  border: 1px solid var(--border);
-  border-radius: 3px; padding: 2px 7px;
-  font-size: 10px; font-weight: 600; font-family: 'IBM Plex Mono', monospace;
-  letter-spacing: 0.04em; white-space: nowrap;
-}
-.schilder-toggle-row {
-  grid-column: 1 / -1; display: flex; align-items: center; gap: 10px;
-  padding: 6px 0;
-}
-.schilder-toggle-row label:first-child {
-  font-size: 11px; color: var(--muted); text-transform: uppercase;
-  letter-spacing: 0.08em; font-weight: 500; white-space: nowrap;
-}
-.schilder-switch { display: flex; align-items: center; gap: 8px; cursor: pointer; }
-.schilder-switch input { display: none; }
-.schilder-track {
-  width: 30px; height: 16px; background: var(--border); border-radius: 8px;
-  position: relative; display: block; transition: background 0.2s; flex-shrink: 0;
-}
-.schilder-switch input:checked + .schilder-track { background: var(--orange); }
-.schilder-thumb {
-  position: absolute; top: 2px; left: 2px; width: 12px; height: 12px;
-  background: var(--muted); border-radius: 50%; transition: transform 0.2s, background 0.2s;
-}
-.schilder-switch input:checked + .schilder-track .schilder-thumb { transform: translateX(14px); background: #fff; }
-.schilder-switch-label { font-size: 13px; color: var(--muted); }
-
 /* ── Deuren sectie in modal ─────────────────────────────── */
 .deuren-sectie { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border); }
 .deuren-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
@@ -697,122 +666,75 @@ textarea { resize: vertical; min-height: 56px; }
 .deuren-leeg { font-size: 12px; color: var(--muted); padding: 6px 0; }
 .deuren-loading { font-size: 12px; color: var(--muted); padding: 6px 0; }
 
+/* ── Uitvragen sectie in modal ──────────────────────────── */
+.uitvragen-sectie { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border); }
+.uitvragen-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+.uitvragen-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.extern-toggle-wrap { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
+.extern-toggle-wrap input[type=checkbox] { display: none; }
+.extern-toggle-switch {
+  width: 28px; height: 16px; border-radius: 8px; background: var(--border);
+  position: relative; display: block; transition: background 0.2s; flex-shrink: 0;
+}
+.extern-toggle-switch::after {
+  content: ''; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px;
+  border-radius: 50%; background: var(--muted); transition: transform 0.2s, background 0.2s;
+}
+.extern-toggle-wrap input:checked ~ .extern-toggle-switch { background: var(--orange); }
+.extern-toggle-wrap input:checked ~ .extern-toggle-switch::after { transform: translateX(12px); background: #fff; }
+.extern-toggle-text { font-size: 12px; color: var(--text); }
+.extern-item {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 4px;
+  padding: 8px 10px; margin-bottom: 6px; flex-wrap: wrap;
+}
+.extern-item-actief { border-color: rgba(var(--orange-rgb), 0.3); }
+.extern-item-laat { border-color: rgba(192,57,43,0.5); background: rgba(192,57,43,0.05); }
+.extern-item-naam { font-size: 13px; font-weight: 500; flex: 1; min-width: 100px; }
+.extern-item-acties { display: flex; align-items: center; gap: 8px; flex-shrink: 0; flex-wrap: wrap; }
+.extern-item-datum { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); }
+.extern-ontvangen { display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 12px; color: var(--muted); }
+.extern-ontvangen input[type=checkbox] { width: 14px; height: 14px; cursor: pointer; accent-color: var(--orange); }
+.extern-ontvangen input:checked + span { color: var(--green); font-weight: 500; }
+.extern-mail-btn {
+  padding: 4px 10px; border-radius: 3px; border: 1px solid rgba(var(--orange-rgb),0.35);
+  background: rgba(var(--orange-rgb),0.08); color: var(--orange); font-size: 11px; font-weight: 600;
+  cursor: pointer; transition: all 0.15s; white-space: nowrap; font-family: 'IBM Plex Sans', sans-serif;
+}
+.extern-mail-btn:hover { background: rgba(var(--orange-rgb),0.18); border-color: var(--orange); }
+.extern-klaar {
+  margin-top: 10px; padding: 10px 12px; background: rgba(76,175,110,0.1);
+  border: 1px solid rgba(76,175,110,0.3); border-radius: 5px;
+  font-size: 12px; font-weight: 600; color: var(--green);
+}
+.extern-leeg { font-size: 12px; color: var(--muted); padding: 6px 0; font-style: italic; }
+.aandacht-card-extern { border-color: rgba(74,144,217,0.3); }
+.aandacht-card-extern:hover { border-color: var(--blue); }
+
+/* ── Onderaannemers beheer (in accent panel) ────────────── */
+.oa-divider { height: 1px; background: var(--border); margin: 10px 0 0; }
+.oa-beheer-lijst { max-height: 120px; overflow-y: auto; margin-bottom: 6px; }
+.oa-item { display: flex; align-items: center; justify-content: space-between; padding: 4px 2px; border-bottom: 1px solid var(--border); }
+.oa-item:last-child { border-bottom: none; }
+.oa-naam { font-size: 12px; color: var(--text); flex: 1; }
+.oa-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 12px; padding: 0 2px; line-height: 1; transition: color 0.15s; flex-shrink: 0; }
+.oa-del:hover { color: var(--red); }
+.oa-leeg { font-size: 11px; color: var(--muted); padding: 4px 0; font-style: italic; }
+.oa-toevoegen-wrap { display: flex; gap: 5px; align-items: center; }
+.oa-input {
+  flex: 1; background: var(--bg); border: 1px solid var(--border); color: var(--text);
+  padding: 5px 8px; border-radius: 3px; font-size: 12px; outline: none;
+  font-family: 'IBM Plex Sans', sans-serif; transition: border-color 0.15s; min-width: 0;
+  -webkit-appearance: none;
+}
+.oa-input:focus { border-color: var(--orange); }
+.oa-add-btn {
+  width: 24px; height: 24px; border-radius: 3px; flex-shrink: 0; padding: 0;
+  background: rgba(var(--orange-rgb),0.12); border: 1px solid rgba(var(--orange-rgb),0.3);
+  color: var(--orange); font-size: 18px; cursor: pointer; line-height: 1;
+  display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+}
+.oa-add-btn:hover { background: rgba(var(--orange-rgb),0.25); border-color: var(--orange); }
+
 /* ── Scrollbar ──────────────────────────────────────────── */
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-
-/* ── Responsive ─────────────────────────────────────────── */
-@media (max-width: 700px) {
-  .table-wrap { display: none; }
-  .cards { display: flex; }
-  .filter-btns { display: none; }
-  header { padding: 10px 16px; gap: 8px; }
-  .toolbar { padding: 12px 16px; }
-  .main { padding: 14px 16px; }
-  .header-stats { gap: 0; flex-shrink: 0; }
-  .stat { padding: 4px 5px; }
-  .logo { flex-shrink: 0; }
-  .header-tools { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: none; gap: 6px; padding: 2px 0; min-width: 0; }
-  .header-tools::-webkit-scrollbar { display: none; }
-  .wr-btn { flex-shrink: 0; }
-  .loc-list { width: 100%; border-right: none; }
-  #loc-map { display: none; }
-  #view-locaties.active { height: auto; }
-  .loc-body { flex-direction: column; }
-}
-
-@media (min-width: 701px) {
-  .modal-overlay { align-items: center; }
-  .modal { border-radius: 8px; max-width: 540px; }
-  .modal-handle { display: none; }
-}
-
-/* ── Kalender ───────────────────────────────────────────── */
-#view-kalender { padding: 16px 20px; }
-.kal-toolbar {
-  display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
-}
-.kal-nav-btn {
-  background: none; border: 1px solid var(--border); color: var(--muted);
-  border-radius: 4px; width: 30px; height: 30px; cursor: pointer; font-size: 15px;
-  display: flex; align-items: center; justify-content: center; transition: all .15s;
-  flex-shrink: 0;
-}
-.kal-nav-btn:hover { border-color: var(--orange); color: var(--orange); }
-.kal-titel {
-  font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 600;
-  color: var(--orange); min-width: 160px;
-}
-.kal-vandaag-btn {
-  background: none; border: 1px solid var(--border); color: var(--muted);
-  border-radius: 4px; padding: 4px 12px; cursor: pointer;
-  font-size: 11px; font-family: 'IBM Plex Sans', sans-serif; transition: all .15s;
-}
-.kal-vandaag-btn:hover { border-color: var(--orange); color: var(--orange); }
-.kal-week-headers {
-  display: grid; grid-template-columns: repeat(7, 1fr);
-  gap: 4px; margin-bottom: 4px;
-}
-.kal-dag-header {
-  text-align: center; font-size: 10px; text-transform: uppercase;
-  letter-spacing: .08em; color: var(--muted); padding: 5px 0;
-}
-.kal-grid {
-  display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
-}
-.kal-dag {
-  min-height: 110px; background: var(--surface); border: 1px solid var(--border);
-  border-radius: 5px; padding: 8px; overflow: hidden;
-}
-.kal-dag.vandaag { border-color: var(--orange); }
-.kal-dag.ander-maand { opacity: .3; pointer-events: none; }
-.kal-dag-num {
-  font-size: 12px; font-weight: 600; color: var(--muted);
-  margin-bottom: 6px; line-height: 1;
-}
-.kal-dag.vandaag .kal-dag-num {
-  color: var(--orange); background: rgba(var(--orange-rgb),.15);
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 22px; height: 22px; border-radius: 50%; margin-bottom: 5px;
-}
-.kal-project {
-  display: flex; align-items: flex-start; gap: 5px; padding: 4px 6px;
-  border-radius: 3px; cursor: pointer; margin-bottom: 4px;
-  background: var(--surface2); transition: background .12s;
-}
-.kal-project:hover { background: rgba(var(--orange-rgb),.12); }
-.kal-project-dot {
-  width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 4px;
-}
-.kal-project-text { overflow: hidden; flex: 1; min-width: 0; }
-.kal-project-num {
-  font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600;
-  color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  display: flex; align-items: center; justify-content: space-between; gap: 4px;
-}
-.kal-project-adres {
-  font-size: 10px; color: var(--text); white-space: nowrap;
-  overflow: hidden; text-overflow: ellipsis; opacity: .75; margin-bottom: 1px;
-}
-.kal-project-actie {
-  font-size: 10px; color: var(--muted); white-space: nowrap;
-  overflow: hidden; text-overflow: ellipsis;
-}
-.kal-project-tijd {
-  font-family: 'IBM Plex Mono', monospace; font-size: 10px;
-  color: var(--orange); flex-shrink: 0; margin-top: 0;
-}
-.kal-leeg {
-  grid-column: 1 / -1; text-align: center;
-  font-size: 13px; color: var(--muted); padding: 60px 0;
-}
-
-@media (max-width: 700px) {
-  #view-kalender { padding: 12px 10px; }
-  .kal-dag { min-height: 52px; padding: 4px 3px; }
-  .kal-dag-num { font-size: 10px; }
-  .kal-project-actie, .kal-project-tijd { display: none; }
-  .kal-project { padding: 2px 3px; }
-  .kal-titel { font-size: 13px; min-width: 130px; }
-}
+::-webkit-scrollbar

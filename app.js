@@ -36,6 +36,7 @@ let searchQuery = '';
 let editingId = null;
 let sortKey = 'datum';
 let sortDir = 1;
+let onderaannemers = [];
 let apiKey = localStorage.getItem('compier_api_key') || '';
 let sbUrl  = localStorage.getItem('compier_sb_url') || '';
 let sbKey  = localStorage.getItem('compier_sb_key') || '';
@@ -153,6 +154,7 @@ function toonApp() {
   document.getElementById('login-screen').style.display = 'none';
   initApiKey();
   laadProjecten();
+  laadOnderaannemers();
 }
 
 // ── Supabase helpers ──────────────────────────────────────
@@ -260,12 +262,19 @@ async function uitLezenBon() {
   const resultEl = document.getElementById('ai-result');
   resultEl.className = 'ai-result';
   try {
-    const requestBody = JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 700,
-      messages: [{
-        role: 'user',
-        content: `Dit is een Nederlandse opdrachtbon of offerte-aanvraag van Compier O&A. Extraheer de volgende velden en geef ALLEEN een geldig JSON-object terug, geen uitleg, geen markdown.
+    const response = await fetch('https://damp-surf-e962compier-proxy.rayflix.workers.dev', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 700,
+        messages: [{
+          role: 'user',
+          content: `Dit is een Nederlandse opdrachtbon of offerte-aanvraag van Compier O&A. Extraheer de volgende velden en geef ALLEEN een geldig JSON-object terug, geen uitleg, geen markdown.
 Velden:
 - nummer: kenmerk of referentienummer (bijv. "M2603 0024"), of leeg als niet aanwezig
 - adres: volledig werklocatie-adres (straat + huisnummer + postcode + plaats)
@@ -275,35 +284,17 @@ Velden:
 - aanmelder: de contactpersoon op de werklocatie (bijv. vermeld als "Naam aanmelder" of "contactpersoon ter plaatse"), formaat "Naam — telefoonnummer"
 - omschrijving: volledige omschrijving van de werkzaamheden of gevraagde offerte, max 400 tekens. Vermeld hier GEEN ruimtenummer (dat gaat in het ruimte-veld)
 - status: bepaal zelf op basis van de tekst: "offerte" als het een prijsaanvraag of offerteverzoek is, "lopend" als het een opdracht of werkopdracht is
-- schilder: true als de werkzaamheden (deels) schilderwerk betreffen (verven, schilderen, lakken, coating, behangen) of als er RAL-kleurnummers worden genoemd (bijv. RAL 9010), anders false
 Tekst:
 ${tekst.substring(0, 4000)}`
-      }]
+        }]
+      })
     });
-    let data;
-    for (let poging = 0; poging < 2; poging++) {
-      const response = await fetch('https://damp-surf-e962compier-proxy.rayflix.workers.dev', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-        },
-        body: requestBody,
-      });
-      data = await response.json();
-      if (data.error?.type === 'overloaded_error' && poging === 0) {
-        await new Promise(r => setTimeout(r, 2000));
-        continue;
-      }
-      break;
-    }
+    const data = await response.json();
     if (data.error) throw new Error(data.error.message);
     const raw    = data.content[0].text.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(raw);
     const geldig = ['offerte','lopend','wacht','wacht-reactie','wacht-akkoord','klaar'];
     if (parsed.status && geldig.includes(parsed.status)) document.getElementById('f-status').value = parsed.status;
-    if (parsed.schilder === true) document.getElementById('f-schilder').checked = true;
     if (parsed.nummer)        document.getElementById('f-nummer').value = parsed.nummer;
     if (parsed.adres)         document.getElementById('f-adres').value = parsed.adres;
     if (parsed.ruimte)        document.getElementById('f-ruimte').value = parsed.ruimte;
@@ -324,20 +315,33 @@ ${tekst.substring(0, 4000)}`
 
 // ── Filter & render helpers ───────────────────────────────
 function getAandacht() {
-  // Wacht-projecten met een verstreken actiedatum → vragen om aandacht
   const today = new Date(); today.setHours(0,0,0,0);
-  return projecten.filter(p => {
-    if (!p.status?.startsWith('wacht')) return false;
-    if (!p.datum) return false;
-    return new Date(p.datum) < today;
+  const result = [];
+  const idsInLijst = new Set();
+  // Wacht-projecten met verstreken actiedatum
+  projecten.forEach(p => {
+    if (p.status?.startsWith('wacht') && p.datum && new Date(p.datum) < today) {
+      result.push({ ...p, _aandachtType: 'wacht' });
+      idsInLijst.add(p.id);
+    }
   });
+  // Extern aanvragen >= 14 dagen zonder ontvangst
+  projecten.forEach(p => {
+    if (idsInLijst.has(p.id)) return;
+    const aanvragen = Array.isArray(p.extern_aanvragen) ? p.extern_aanvragen : [];
+    const openstaand = aanvragen.filter(a => {
+      if (!a.datum_gevraagd || a.ontvangen) return false;
+      return Math.floor((Date.now() - new Date(a.datum_gevraagd)) / 86400000) >= 14;
+    });
+    if (openstaand.length > 0) result.push({ ...p, _aandachtType: 'extern', _openstaand: openstaand });
+  });
+  return result;
 }
 
 function getFiltered() {
   return projecten.filter(p => {
     const matchFilter = activeFilter === 'alle' || p.status === activeFilter ||
-      (activeFilter === 'wacht' && p.status?.startsWith('wacht')) ||
-      (activeFilter === 'schilder' && p.schilder === true);
+      (activeFilter === 'wacht' && p.status?.startsWith('wacht'));
     const q = searchQuery.toLowerCase();
     const matchSearch = !q || [p.nummer, p.adres, p.ruimte, p.opdrachtgever, p.actie, p.notitie, p.contact]
       .some(v => (v||'').toLowerCase().includes(q));
@@ -395,8 +399,27 @@ function renderAandacht(lijst) {
   document.getElementById('aandacht-count').textContent = lijst.length;
   document.getElementById('aandacht-items').classList.toggle('collapsed', aandachtIngeklapt);
   document.getElementById('aandacht-toggle').textContent = aandachtIngeklapt ? '▼' : '▲';
-  document.getElementById('aandacht-items').innerHTML = lijst.map(p => `
-    <div class="aandacht-card" onclick="openModal(${p.id})">
+  document.getElementById('aandacht-items').innerHTML = lijst.map(p => {
+    if (p._aandachtType === 'extern') {
+      const openstaand = p._openstaand || [];
+      const namen = openstaand.map(a => {
+        const oa = onderaannemers.find(o => o.id === a.onderaannemer_id);
+        return oa ? oa.naam : 'Onbekend';
+      }).join(', ');
+      const oudste = Math.max(...openstaand.map(a => Math.floor((Date.now() - new Date(a.datum_gevraagd)) / 86400000)));
+      return `<div class="aandacht-card aandacht-card-extern" onclick="openModal(${p.id})">
+        <div class="aandacht-card-top">
+          <span class="proj-num" style="font-size:11px">${p.nummer}</span>
+          <span class="status-badge s-offerte" style="font-size:10px"><span class="status-dot"></span>${STATUS_LABELS[p.status] || p.status}</span>
+          <span class="aandacht-verstreken">${oudste} dagen geen respons</span>
+        </div>
+        <div class="aandacht-card-body">
+          <span class="aandacht-adres">${p.adres}</span>
+          <span class="aandacht-actie">↑ Wacht op: ${namen}</span>
+        </div>
+      </div>`;
+    }
+    return `<div class="aandacht-card" onclick="openModal(${p.id})">
       <div class="aandacht-card-top">
         <span class="proj-num" style="font-size:11px">${p.nummer}</span>
         <span class="status-badge s-wacht" style="font-size:10px"><span class="status-dot"></span>${STATUS_LABELS[p.status]}</span>
@@ -406,7 +429,142 @@ function renderAandacht(lijst) {
         <span class="aandacht-adres">${p.adres}</span>
         ${p.actie ? '<span class="aandacht-actie">→ ' + p.actie + '</span>' : ''}
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
+}
+
+// ── Onderaannemers ────────────────────────────────────────
+async function laadOnderaannemers() {
+  if (!sbUrl || !sbKey) return;
+  try {
+    const data = await sbFetch('onderaannemers?order=naam.asc');
+    onderaannemers = Array.isArray(data) ? data : [];
+  } catch(e) {
+    console.warn('Onderaannemers laden mislukt:', e.message);
+  }
+  renderOnderaannemersBeheer();
+}
+
+function renderOnderaannemersBeheer() {
+  const lijst = document.getElementById('onderaannemers-beheer-lijst');
+  if (!lijst) return;
+  if (!onderaannemers.length) {
+    lijst.innerHTML = '<div class="oa-leeg">Nog geen onderaannemers.</div>';
+    return;
+  }
+  lijst.innerHTML = onderaannemers.map(o =>
+    `<div class="oa-item">
+      <span class="oa-naam">${o.naam}</span>
+      <button class="oa-del" onclick="verwijderOnderaannemer(${o.id})" title="Verwijderen">✕</button>
+    </div>`
+  ).join('');
+}
+
+async function voegOnderaannemerToe() {
+  const input = document.getElementById('nieuwe-oa-input');
+  const naam = (input?.value || '').trim();
+  if (!naam) return;
+  try {
+    const result = await sbFetch('onderaannemers', 'POST', { naam });
+    const nieuw = Array.isArray(result) && result[0] ? result[0] : { id: Date.now(), naam };
+    onderaannemers.push(nieuw);
+    onderaannemers.sort((a, b) => a.naam.localeCompare(b.naam));
+    if (input) input.value = '';
+    renderOnderaannemersBeheer();
+    if (editingId) renderUitvragenSectie();
+  } catch(e) { alert('Toevoegen mislukt: ' + e.message); }
+}
+
+async function verwijderOnderaannemer(id) {
+  if (!confirm('Onderaannemer verwijderen?')) return;
+  try {
+    await sbFetch('onderaannemers?id=eq.' + id, 'DELETE');
+    onderaannemers = onderaannemers.filter(o => o.id !== id);
+    renderOnderaannemersBeheer();
+    if (editingId) renderUitvragenSectie();
+  } catch(e) { alert('Verwijderen mislukt: ' + e.message); }
+}
+
+// ── Uitvragen sectie ──────────────────────────────────────
+function toggleExternView(checked) {
+  document.getElementById('extern-inhoud').style.display = checked ? 'block' : 'none';
+}
+
+function renderUitvragenSectie() {
+  const p = projecten.find(x => x.id === editingId);
+  if (!p) return;
+  const aanvragen = Array.isArray(p.extern_aanvragen) ? p.extern_aanvragen : [];
+  const heeftAanvragen = aanvragen.some(a => a.datum_gevraagd);
+  const toggle = document.getElementById('extern-toggle');
+  if (toggle) toggle.checked = heeftAanvragen;
+  document.getElementById('extern-inhoud').style.display = heeftAanvragen ? 'block' : 'none';
+  if (!onderaannemers.length) {
+    document.getElementById('extern-lijst').innerHTML = '<div class="extern-leeg">Voeg eerst onderaannemers toe via het kleurenmenu (●).</div>';
+    checkAlleOntvangen(aanvragen);
+    return;
+  }
+  document.getElementById('extern-lijst').innerHTML = onderaannemers.map(oa => {
+    const a = aanvragen.find(x => x.onderaannemer_id === oa.id);
+    const gemaild = a?.datum_gevraagd;
+    const ontvangen = a?.ontvangen;
+    const islaat = gemaild && !ontvangen && Math.floor((Date.now() - new Date(a.datum_gevraagd)) / 86400000) >= 14;
+    return `<div class="extern-item${gemaild ? ' extern-item-actief' : ''}${islaat ? ' extern-item-laat' : ''}">
+      <div class="extern-item-naam">${oa.naam}</div>
+      <div class="extern-item-acties">
+        ${gemaild
+          ? `<span class="extern-item-datum">${fmtCreated(a.datum_gevraagd)}</span>
+             <label class="extern-ontvangen">
+               <input type="checkbox" ${ontvangen ? 'checked' : ''} onchange="markeerOntvangen(${oa.id}, this.checked)">
+               <span>Ontvangen</span>
+             </label>`
+          : `<button class="extern-mail-btn" onclick="mailAanvraag(${oa.id})">Aanvraag mailen</button>`
+        }
+      </div>
+    </div>`;
+  }).join('');
+  checkAlleOntvangen(aanvragen);
+}
+
+function checkAlleOntvangen(aanvragen) {
+  const verzonden = aanvragen.filter(a => a.datum_gevraagd);
+  const alleOk = verzonden.length > 0 && verzonden.every(a => a.ontvangen);
+  const klaar = document.getElementById('extern-klaar');
+  if (klaar) klaar.style.display = alleOk ? 'block' : 'none';
+}
+
+async function mailAanvraag(onderaannemerId) {
+  const p = projecten.find(x => x.id === editingId);
+  if (!p) return;
+  let aanvragen = Array.isArray(p.extern_aanvragen) ? [...p.extern_aanvragen] : [];
+  const bestaand = aanvragen.find(a => a.onderaannemer_id === onderaannemerId);
+  const datum = new Date().toISOString().slice(0, 10);
+  if (bestaand) { bestaand.datum_gevraagd = datum; bestaand.ontvangen = false; }
+  else aanvragen.push({ onderaannemer_id: onderaannemerId, datum_gevraagd: datum, ontvangen: false });
+  p.extern_aanvragen = aanvragen;
+  const idx = projecten.findIndex(x => x.id === editingId);
+  if (idx !== -1) projecten[idx].extern_aanvragen = aanvragen;
+  try { await sbFetch('projecten?id=eq.' + p.id, 'PATCH', { extern_aanvragen: aanvragen }); }
+  catch(e) { console.warn('Opslaan aanvraag mislukt:', e); }
+  const toggle = document.getElementById('extern-toggle');
+  if (toggle) { toggle.checked = true; document.getElementById('extern-inhoud').style.display = 'block'; }
+  renderUitvragenSectie();
+  render();
+}
+
+async function markeerOntvangen(onderaannemerId, ontvangen) {
+  const p = projecten.find(x => x.id === editingId);
+  if (!p) return;
+  let aanvragen = Array.isArray(p.extern_aanvragen) ? [...p.extern_aanvragen] : [];
+  const a = aanvragen.find(x => x.onderaannemer_id === onderaannemerId);
+  if (!a) return;
+  a.ontvangen = ontvangen;
+  p.extern_aanvragen = aanvragen;
+  const idx = projecten.findIndex(x => x.id === editingId);
+  if (idx !== -1) projecten[idx].extern_aanvragen = aanvragen;
+  try { await sbFetch('projecten?id=eq.' + p.id, 'PATCH', { extern_aanvragen: aanvragen }); }
+  catch(e) { console.warn('Opslaan ontvangen mislukt:', e); }
+  renderUitvragenSectie();
+  render();
 }
 
 // ── Render ────────────────────────────────────────────────
@@ -428,10 +586,7 @@ function render() {
     empty.style.display = 'none';
     tbody.innerHTML = data.map(p => `
       <tr onclick="openModal(${p.id})">
-        <td>
-          <div class="proj-num">${p.nummer}</div>
-          ${p.schilder ? '<span class="schilder-badge">🖌 Schilder</span>' : ''}
-        </td>
+        <td><div class="proj-num">${p.nummer}</div></td>
         <td>
           <div class="proj-addr">${p.adres}</div>
           ${p.notitie ? `<div class="proj-client">${p.notitie.substring(0,55)}${p.notitie.length>55?'…':''}</div>` : ''}
@@ -455,10 +610,7 @@ function render() {
     <div class="card" onclick="openModal(${p.id})">
       <div class="card-top">
         <span class="card-num">${p.nummer}</span>
-        <div style="display:flex;align-items:center;gap:6px">
-          ${p.schilder ? '<span class="schilder-badge">🖌 Schilder</span>' : ''}
-          <span class="status-badge ${STATUS_CLASS[p.status]}"><span class="status-dot"></span>${STATUS_LABELS[p.status]}</span>
-        </div>
+        <span class="status-badge ${STATUS_CLASS[p.status]}"><span class="status-dot"></span>${STATUS_LABELS[p.status]}</span>
       </div>
       <div class="card-addr">${p.adres}</div>
       <div class="card-client">${p.opdrachtgever}${p.contact ? ' · ' + p.contact.split('—')[0].trim() : ''}</div>
@@ -538,7 +690,6 @@ function openModal(id) {
     document.getElementById('f-contact').value = p.contact || '';
     document.getElementById('f-aanmelder').value = p.aanmelder || '';
     document.getElementById('f-notitie').value = p.notitie || '';
-    document.getElementById('f-schilder').checked = !!p.schilder;
     renderActieLog(p.acties_log || []);
     document.querySelectorAll('.actie-chip').forEach(c => {
       c.classList.toggle('selected', c.textContent === (p.actie || ''));
@@ -548,9 +699,10 @@ function openModal(id) {
     sectie.style.display = 'block';
     document.getElementById('deuren-tool-btn').setAttribute('data-url', 'https://flixinc.github.io/deuren/?m=' + encodeURIComponent(p.nummer));
     laadDeuren(p.nummer);
+    document.getElementById('uitvragen-sectie').style.display = 'block';
+    renderUitvragenSectie();
   } else {
     ['f-nummer','f-adres','f-ruimte','f-opdrachtgever','f-actie','f-contact','f-aanmelder','f-notitie'].forEach(i => document.getElementById(i).value = '');
-    document.getElementById('f-schilder').checked = false;
     document.getElementById('f-status').value = 'lopend';
     onStatusChange('lopend');
     document.getElementById('f-datum').value = '';
@@ -559,6 +711,7 @@ function openModal(id) {
     document.querySelectorAll('.actie-chip').forEach(c => c.classList.remove('selected'));
     toonLogo('');
     document.getElementById('deuren-sectie').style.display = 'none';
+    document.getElementById('uitvragen-sectie').style.display = 'none';
   }
   document.getElementById('modal').classList.add('open');
 }
@@ -729,7 +882,6 @@ async function saveProject() {
     contact:       document.getElementById('f-contact').value.trim(),
     aanmelder:     document.getElementById('f-aanmelder').value.trim(),
     notitie:       document.getElementById('f-notitie').value.trim(),
-    schilder:      document.getElementById('f-schilder').checked,
   };
   if (!p.nummer || !p.adres) { alert('Vul minimaal kenmerk en adres in.'); return; }
   const dubbel = projecten.find(x => x.nummer.trim().toLowerCase() === p.nummer.toLowerCase() && x.id !== editingId);
@@ -1364,212 +1516,3 @@ function renderKalender() {
     const projectHtml = dagProjecten.map(p => {
       const tijd = p.datum?.includes('T') ? p.datum.slice(11, 16) : '';
       const kleur = KAL_STATUS_KLEUR[p.status] || '#666';
-      return `<div class="kal-project" onclick="event.stopPropagation();openModal(${p.id})">
-        <div class="kal-project-dot" style="background:${kleur}"></div>
-        <div class="kal-project-text">
-          <div class="kal-project-num">${p.nummer}${tijd ? `<span class="kal-project-tijd">${tijd}</span>` : ''}</div>
-          ${p.adres ? `<div class="kal-project-adres">${p.adres}</div>` : ''}
-          ${p.actie ? `<div class="kal-project-actie">${p.actie}</div>` : ''}
-        </div>
-      </div>`;
-    }).join('');
-
-    html += `<div class="${klassen}">
-      <div class="kal-dag-num">${weergave}</div>
-      ${projectHtml}
-    </div>`;
-  }
-
-  if (!heeftProjecten) {
-    html += `<div class="kal-leeg">Geen projecten met datum in ${KAL_MAANDEN[kalMaand]}</div>`;
-  }
-
-  grid.innerHTML = html;
-}
-
-function kalNavigeer(delta) {
-  kalMaand += delta;
-  if (kalMaand > 11) { kalMaand = 0; kalJaar++; }
-  if (kalMaand < 0)  { kalMaand = 11; kalJaar--; }
-  renderKalender();
-}
-
-function kalNaarVandaag() {
-  const nu = new Date();
-  kalJaar  = nu.getFullYear();
-  kalMaand = nu.getMonth();
-  renderKalender();
-}
-
-// ── Deel kaart ────────────────────────────────────────────
-function deelKaart() {
-  const p = projecten.find(x => x.id === editingId);
-  if (!p) return;
-
-  const ORANGE  = getComputedStyle(document.documentElement).getPropertyValue('--orange').trim() || '#E8611A';
-  const isLight = document.body.classList.contains('light');
-  const C = {
-    bg:      isLight ? '#ffffff' : '#111111',
-    footer:  isLight ? '#f0f0ee' : '#1a1a1a',
-    lijn:    isLight ? '#d0d0ce' : '#2a2a2a',
-    chip:    isLight ? '#e6e6e4' : '#222222',
-    chipRnd: isLight ? '#d0d0ce' : '#333333',
-    tekst:   isLight ? '#1a1a1a' : '#e8e8e8',
-    muted:   isLight ? '#888888' : '#555555',
-    notitie: isLight ? '#444444' : '#aaaaaa',
-    ruimte:  isLight ? '#555555' : '#999999',
-  };
-
-  // ── Bereken notitie-regels vooraf (voor dynamische hoogte) ──
-  const W = 390;
-  const REGEL_H = 17, NOTITIE_FONT = '400 12px "IBM Plex Sans", sans-serif';
-  const tmpC = document.createElement('canvas').getContext('2d');
-  tmpC.font = NOTITIE_FONT;
-  const notitieRegels = [];
-  if (p.notitie) {
-    const woorden = p.notitie.split(' ');
-    let huidig = '';
-    for (const w of woorden) {
-      const test = huidig ? huidig + ' ' + w : w;
-      if (tmpC.measureText(test).width < W - 40) {
-        huidig = test;
-      } else {
-        if (huidig) notitieRegels.push(huidig);
-        huidig = w;
-      }
-    }
-    if (huidig) notitieRegels.push(huidig);
-  } else if (p.actie) {
-    notitieRegels.push(p.actie);
-  }
-
-  // Vaste blokken + ruimte voor notitie-regels + datum + footer
-  const VASTE_TOP   = 168; // t/m OPDRACHT label
-  const NOTITIE_TOP = 184;
-  const notitieH    = Math.max(notitieRegels.length * REGEL_H, 18);
-  const DATUM_TOP   = NOTITIE_TOP + notitieH + 20; // lijn + ruimte
-  const H           = DATUM_TOP + (p.datum ? 56 : 10) + 32; // datum blok + onderste padding
-
-  const canvas = document.createElement('canvas');
-  canvas.width = W * 2; canvas.height = H * 2;
-  const ctx = canvas.getContext('2d');
-  ctx.scale(2, 2);
-
-  // Achtergrond
-  ctx.fillStyle = C.bg;
-  ctx.beginPath(); ctx.roundRect(0, 0, W, H, 12); ctx.fill();
-
-  // Header: COMPIER
-  ctx.fillStyle = ORANGE;
-  ctx.font = '700 11px "IBM Plex Mono", monospace';
-  ctx.fillText('COMPIER', 20, 26);
-
-  // Lijn
-  ctx.strokeStyle = C.lijn; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(20, 36); ctx.lineTo(W - 16, 36); ctx.stroke();
-
-  // Projectnummer
-  ctx.fillStyle = ORANGE;
-  ctx.font = '700 26px "IBM Plex Mono", monospace';
-  ctx.fillText(p.nummer, 20, 72);
-
-  // Ruimte chip
-  if (p.ruimte) {
-    ctx.font = '600 10px "IBM Plex Mono", monospace';
-    const rw = ctx.measureText(p.ruimte).width + 14;
-    ctx.fillStyle = C.chip;
-    ctx.beginPath(); ctx.roundRect(20, 80, rw, 18, 3); ctx.fill();
-    ctx.strokeStyle = C.chipRnd; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.roundRect(20, 80, rw, 18, 3); ctx.stroke();
-    ctx.fillStyle = C.ruimte;
-    ctx.fillText(p.ruimte, 27, 92.5);
-  }
-
-  // Adres
-  ctx.fillStyle = C.tekst;
-  ctx.font = '600 14px "IBM Plex Sans", sans-serif';
-  ctx.fillText(p.adres || '—', 20, 122);
-  ctx.fillStyle = C.muted;
-  ctx.font = '400 11px "IBM Plex Sans", sans-serif';
-  ctx.fillText(p.opdrachtgever || '', 20, 140);
-
-  // Lijn
-  ctx.strokeStyle = C.lijn;
-  ctx.beginPath(); ctx.moveTo(20, 152); ctx.lineTo(W - 16, 152); ctx.stroke();
-
-  // Opdracht label
-  ctx.fillStyle = C.tekst;
-  ctx.font = '600 9px "IBM Plex Sans", sans-serif';
-  ctx.letterSpacing = '1.5px';
-  ctx.fillText('OPDRACHT', 20, VASTE_TOP);
-  ctx.letterSpacing = '0px';
-
-  // Notitie — alle regels
-  ctx.fillStyle = C.notitie;
-  ctx.font = NOTITIE_FONT;
-  notitieRegels.forEach((r, i) => {
-    ctx.fillText(r, 20, NOTITIE_TOP + i * REGEL_H);
-  });
-
-  // Lijn vóór datum
-  ctx.strokeStyle = C.lijn;
-  ctx.beginPath(); ctx.moveTo(20, DATUM_TOP - 10); ctx.lineTo(W - 16, DATUM_TOP - 10); ctx.stroke();
-
-  // Datum
-  if (p.datum) {
-    const d    = new Date(p.datum);
-    const dag  = d.toLocaleDateString('nl-NL', { weekday: 'long' });
-    const dat  = d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' });
-    const tijd = p.datum.includes('T') ? p.datum.slice(11, 16) : null;
-    ctx.fillStyle = C.tekst;
-    ctx.font = '600 9px "IBM Plex Sans", sans-serif';
-    ctx.letterSpacing = '1.5px';
-    ctx.fillText('DATUM', 20, DATUM_TOP + 6);
-    ctx.letterSpacing = '0px';
-    ctx.fillStyle = ORANGE;
-    ctx.font = '600 13px "IBM Plex Mono", monospace';
-    ctx.fillText(dag.charAt(0).toUpperCase() + dag.slice(1) + ' — ' + dat + (tijd ? '  ' + tijd : ''), 20, DATUM_TOP + 24);
-  }
-
-  // Oranje balk links — als laatste getekend zodat hij altijd schoon bovenop staat
-  ctx.fillStyle = ORANGE;
-  ctx.beginPath(); ctx.roundRect(0, 0, 4, H, [12, 0, 0, 12]); ctx.fill();
-
-  // Naar PNG en openen in nieuw tabblad (iOS: lang indrukken → opslaan/delen)
-  const imgUrl = canvas.toDataURL('image/png');
-  const bgPagina = isLight ? '#f0f0ee' : '#0f0f0f';
-  const win = window.open('', '_blank');
-  if (win) {
-    win.document.write(`<!DOCTYPE html><html><head>
-      <meta name="viewport" content="width=device-width,initial-scale=1">
-      <title>${p.nummer}</title>
-      <style>
-        * { box-sizing:border-box; margin:0; padding:0; }
-        body { background:${bgPagina}; display:flex; flex-direction:column;
-               align-items:center; justify-content:center; min-height:100vh;
-               gap:20px; padding:24px 16px; font-family:'IBM Plex Sans',sans-serif; }
-        img { width:390px; max-width:100%; border-radius:12px;
-              box-shadow:0 8px 32px rgba(0,0,0,.4); }
-        .hint { color:#666; font-size:12px; text-align:center; }
-        .terug {
-          display:inline-flex; align-items:center; gap:6px;
-          padding:10px 20px; border-radius:6px;
-          background:${isLight ? '#e6e6e4' : '#1e1e1e'};
-          border:1px solid ${isLight ? '#d0d0ce' : '#2a2a2a'};
-          color:${isLight ? '#1a1a1a' : '#e8e8e8'};
-          font-size:13px; font-weight:600; cursor:pointer;
-          text-decoration:none; letter-spacing:0.02em;
-        }
-        .terug:hover { border-color:#E8611A; color:#E8611A; }
-      </style></head><body>
-      <img src="${imgUrl}" alt="${p.nummer}">
-      <p class="hint">Houd de afbeelding ingedrukt om op te slaan of te delen</p>
-      <a class="terug" onclick="window.close()" href="#">← Terug naar dashboard</a>
-    </body></html>`);
-    win.document.close();
-  }
-}
-
-// ── Init ──────────────────────────────────────────────────
-initAccentSwatches();
-initAuth();
