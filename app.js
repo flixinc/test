@@ -1721,4 +1721,6 @@ function deelKaart() {
 }
 
 // ── Init ──────────────────────────────────────────────────
+initAccentSwatches();
+initAuth();
 initAccentSwa
