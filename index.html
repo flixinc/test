@@ -247,6 +247,7 @@
             <th onclick="sortBy('ruimte')">Ruimte</th>
             <th onclick="sortBy('opdrachtgever')">Opdrachtgever</th>
             <th onclick="sortBy('status')">Status</th>
+            <th onclick="sortBy('laatste_actie_datum')">Laatste actie</th>
             <th onclick="sortBy('actie')">Volgende actie</th>
             <th onclick="sortBy('created_at')" title="Sorteer op aanmaakdatum" style="white-space:nowrap">Toegevoegd</th>
           </tr>
@@ -371,25 +372,29 @@
         <label>Omschrijving werkzaamheden</label>
         <textarea id="f-notitie" placeholder="Wat moet er gedaan worden?"></textarea>
       </div>
-      <div class="form-group full" id="actie-sectie">
-        <label>Volgende actie</label>
-        <input type="text" id="f-actie" placeholder="Kies hieronder of typ zelf…">
-        <div class="actie-chips" id="actie-chips">
-          <div class="chips-label">Doen</div>
-          <button type="button" class="actie-chip" onclick="kiesActie('Inmeten')">Inmeten</button>
-          <button type="button" class="actie-chip" onclick="kiesActie('Inplannen')">Inplannen</button>
-          <button type="button" class="actie-chip" onclick="kiesActie('Montage')">Montage</button>
-          <button type="button" class="actie-chip" onclick="kiesActie('Materialen bestellen')">Materialen bestellen</button>
-          <button type="button" class="actie-chip" onclick="kiesActie('Offerte maken')">Offerte maken</button>
-          <button type="button" class="actie-chip" onclick="kiesActie('Offerte versturen')">Offerte versturen</button>
-          <button type="button" class="actie-chip" onclick="kiesActie('Terugbellen')">Terugbellen</button>
-          <button type="button" class="actie-chip" onclick="kiesActie('Oplevering plannen')">Oplevering plannen</button>
-          <button type="button" class="actie-chip" onclick="kiesActie('Gereed melden')">Gereed melden</button>
-          <div class="chips-label" style="margin-top:4px">Wachten</div>
-          <button type="button" class="actie-chip chip-wacht" onclick="kiesActie('Wachten op reactie')">Wachten op reactie</button>
-          <button type="button" class="actie-chip chip-wacht" onclick="kiesActie('Wachten op akkoord')">Wachten op akkoord</button>
-          <button type="button" class="actie-chip chip-wacht" onclick="kiesActie('Wachten op materiaal')">Wachten op materiaal</button>
+      <!-- Laatste actie -->
+      <div class="laatste-actie-sectie form-group full" id="actie-sectie">
+        <label>Laatste actie <span class="la-hint">— tik aan wat je net gedaan hebt</span></label>
+        <span class="laatste-actie-display" id="laatste-actie-display" style="display:none"></span>
+        <div class="laatste-actie-chips">
+          <button type="button" class="laatste-actie-chip" data-label="Bon/opdracht binnen"  onclick="logActie('Bon/opdracht binnen')">📥 Bon/opdracht binnen</button>
+          <button type="button" class="laatste-actie-chip" data-label="Inmeten op locatie"   onclick="logActie('Inmeten op locatie')">📍 Inmeten op locatie</button>
+          <button type="button" class="laatste-actie-chip chip-extern" data-label="Extern opvragen" onclick="logActie('Extern opvragen')">🔍 Extern opvragen</button>
+          <button type="button" class="laatste-actie-chip" data-label="Offerte opstellen"    onclick="logActie('Offerte opstellen')">📝 Offerte opstellen</button>
+          <button type="button" class="laatste-actie-chip" data-label="Offerte verstuurd"    onclick="logActie('Offerte verstuurd')">📬 Offerte verstuurd</button>
+          <button type="button" class="laatste-actie-chip" data-label="Akkoord ontvangen"    onclick="logActie('Akkoord ontvangen')">✅ Akkoord ontvangen</button>
+          <button type="button" class="laatste-actie-chip" data-label="Materialen bestellen" onclick="logActie('Materialen bestellen')">🛒 Materialen bestellen</button>
+          <button type="button" class="laatste-actie-chip" data-label="Inplannen"            onclick="logActie('Inplannen')">📅 Inplannen</button>
+          <button type="button" class="laatste-actie-chip" data-label="Opdracht gegeven"     onclick="logActie('Opdracht gegeven')">👷 Opdracht gegeven</button>
+          <button type="button" class="laatste-actie-chip" data-label="Statusupdate gegeven" onclick="logActie('Statusupdate gegeven')">📢 Statusupdate gegeven</button>
+          <button type="button" class="laatste-actie-chip" data-label="Opgeleverd"           onclick="logActie('Opgeleverd')">🏁 Opgeleverd</button>
+          <button type="button" class="laatste-actie-chip" data-label="Afgemeld"             onclick="logActie('Afgemeld')">✔️ Afgemeld</button>
         </div>
+      </div>
+      <!-- Volgende actie -->
+      <div class="form-group full">
+        <label>Volgende actie</label>
+        <input type="text" id="f-actie" placeholder="Wat moet er als volgende gebeuren…">
       </div>
       <div class="form-group" id="datum-sectie">
         <label>Datum &amp; tijd</label>
@@ -397,9 +402,9 @@
       </div>
     </div>
 
-    <!-- Actie log -->
+    <!-- Tijdlijn -->
     <div class="actie-log" id="actie-log" style="display:none">
-      <div class="actie-log-titel">Vorige acties</div>
+      <div class="actie-log-titel">Tijdlijn</div>
       <div id="actie-log-items"></div>
     </div>
 

@@ -337,6 +337,19 @@ function getAandacht() {
     });
     if (openstaand.length > 0) result.push({ ...p, _aandachtType: 'extern', _openstaand: openstaand });
   });
+  // Inactiviteit: laatste_actie_datum > 7d (intern) of 14d (extern), volgende actie open
+  projecten.forEach(p => {
+    if (idsInLijst.has(p.id)) return;
+    if (!p.laatste_actie_datum || !p.actie) return;
+    if (p.status === 'klaar') return;
+    const chip = ACTIE_CHIPS.find(c => c.label === p.laatste_actie);
+    const drempel = (chip && chip.type === 'extern') ? 14 : 7;
+    const dagen = Math.floor((Date.now() - new Date(p.laatste_actie_datum)) / 86400000);
+    if (dagen >= drempel) {
+      result.push({ ...p, _aandachtType: 'inactief', _dagenInactief: dagen, _drempel: drempel });
+      idsInLijst.add(p.id);
+    }
+  });
   return result;
 }
 
@@ -350,7 +363,7 @@ function getFiltered() {
       .some(v => (v||'').toLowerCase().includes(q));
     return matchFilter && matchSearch;
   }).sort((a, b) => {
-    if (sortKey === 'datum' || sortKey === 'created_at') {
+    if (sortKey === 'datum' || sortKey === 'created_at' || sortKey === 'laatste_actie_datum') {
       const av = a[sortKey] || '', bv = b[sortKey] || '';
       return av < bv ? sortDir : av > bv ? -sortDir : 0;
     }
@@ -403,6 +416,20 @@ function renderAandacht(lijst) {
   document.getElementById('aandacht-items').classList.toggle('collapsed', aandachtIngeklapt);
   document.getElementById('aandacht-toggle').textContent = aandachtIngeklapt ? '▼' : '▲';
   document.getElementById('aandacht-items').innerHTML = lijst.map(p => {
+    if (p._aandachtType === 'inactief') {
+      const chip = ACTIE_CHIPS.find(c => c.label === p.laatste_actie);
+      const emoji = chip ? chip.emoji : '•';
+      return '<div class="aandacht-card aandacht-card-inactief" onclick="openModal(' + p.id + ')">'
+        + '<div class="aandacht-card-top">'
+        + '<span class="proj-num" style="font-size:11px">' + p.nummer + '</span>'
+        + '<span class="aandacht-verstreken">' + p._dagenInactief + ' dagen geen actie</span>'
+        + '</div>'
+        + '<div class="aandacht-card-body">'
+        + '<span class="aandacht-adres">' + p.adres + '</span>'
+        + '<span class="aandacht-actie">' + emoji + ' ' + (p.laatste_actie || '') + ' → ' + (p.actie || '') + '</span>'
+        + '</div>'
+        + '</div>';
+    }
     if (p._aandachtType === 'extern') {
       const openstaand = p._openstaand || [];
       const namen = openstaand.map(a => {
@@ -611,6 +638,10 @@ function render() {
           ${p.contact ? `<div class="proj-client">${p.contact.split('—')[0].trim()}</div>` : ''}
           ${p.uitvoerder ? `<div class="proj-uitvoerder">🔧 ${p.uitvoerder}</div>` : ''}
         </td>
+        <td>
+          ${p.laatste_actie ? `<div class="proj-laatste-actie">${ACTIE_CHIPS.find(c=>c.label===p.laatste_actie)?.emoji||'•'} ${p.laatste_actie}</div>` : '<div class="proj-client">—</div>'}
+          ${p.laatste_actie_datum ? `<div class="proj-client">${fmt(p.laatste_actie_datum)}</div>` : ''}
+        </td>
         <td><span class="status-badge ${STATUS_CLASS[p.status]}"><span class="status-dot"></span>${STATUS_LABELS[p.status]}</span></td>
         <td>
           ${p.status === 'klaar' ? '' : `
@@ -633,6 +664,7 @@ function render() {
       <div class="card-addr">${p.adres}</div>
       <div class="card-client">${p.opdrachtgever}${p.contact ? ' · ' + p.contact.split('—')[0].trim() : ''}</div>
       ${p.uitvoerder ? '<div class="card-uitvoerder">🔧 ' + p.uitvoerder + '</div>' : ''}
+      ${p.laatste_actie ? '<div class="card-laatste-actie">' + (ACTIE_CHIPS.find(c=>c.label===p.laatste_actie)?.emoji||'•') + ' ' + p.laatste_actie + (p.laatste_actie_datum ? ' <span class="card-actie-datum">' + fmt(p.laatste_actie_datum) + '</span>' : '') + '</div>' : ''}
       ${p.notitie ? `<div class="card-actie" style="color:var(--muted);font-size:12px;margin-bottom:6px">${p.notitie.substring(0,80)}…</div>` : ''}
       ${p.status !== 'klaar' && p.actie ? `<div class="card-actie">${p.actie}</div>` : ''}
       ${(p.status !== 'klaar' && p.datum) || p.ruimte ? `<div class="card-footer">
@@ -711,7 +743,8 @@ function openModal(id) {
     document.getElementById('f-notitie').value = p.notitie || '';
     document.getElementById('f-schilder').checked = !!p.schilder;
     document.getElementById('f-uitvoerder').value = p.uitvoerder || '';
-    renderActieLog(p.acties_log || []);
+    renderLaatsteActieChips(p.laatste_actie || '');
+    renderTijdlijn(p.acties_log || []);
     document.querySelectorAll('.actie-chip').forEach(c => {
       c.classList.toggle('selected', c.textContent === (p.actie || ''));
     });
@@ -726,6 +759,8 @@ function openModal(id) {
     ['f-nummer','f-adres','f-ruimte','f-opdrachtgever','f-actie','f-contact','f-aanmelder','f-notitie'].forEach(i => document.getElementById(i).value = '');
     document.getElementById('f-schilder').checked = false;
     document.getElementById('f-uitvoerder').value = '';
+    renderLaatsteActieChips('');
+    renderTijdlijn([]);
     document.getElementById('f-status').value = 'lopend';
     onStatusChange('lopend');
     document.getElementById('f-datum').value = '';
@@ -861,6 +896,22 @@ function toonWRCopied(msg) {
 // ── Status & actie chips ──────────────────────────────────
 const WACHT_ACTIES = ['Wachten op reactie', 'Wachten op akkoord', 'Wachten op materiaal'];
 
+// ── Laatste actie chips ───────────────────────────────────
+const ACTIE_CHIPS = [
+  { label: 'Bon/opdracht binnen',   emoji: '📥', type: 'intern' },
+  { label: 'Inmeten op locatie',    emoji: '📍', type: 'intern' },
+  { label: 'Extern opvragen',       emoji: '🔍', type: 'extern' },
+  { label: 'Offerte opstellen',     emoji: '📝', type: 'intern' },
+  { label: 'Offerte verstuurd',     emoji: '📬', type: 'intern' },
+  { label: 'Akkoord ontvangen',     emoji: '✅', type: 'intern' },
+  { label: 'Materialen bestellen',  emoji: '🛒', type: 'intern' },
+  { label: 'Inplannen',             emoji: '📅', type: 'intern' },
+  { label: 'Opdracht gegeven',      emoji: '👷', type: 'intern' },
+  { label: 'Statusupdate gegeven',  emoji: '📢', type: 'intern' },
+  { label: 'Opgeleverd',            emoji: '🏁', type: 'intern' },
+  { label: 'Afgemeld',              emoji: '✔️',  type: 'intern' },
+];
+
 function onStatusChange(status) {
   const isKlaar = status === 'klaar';
   document.getElementById('actie-sectie').style.display = isKlaar ? 'none' : '';
@@ -880,17 +931,63 @@ function kiesActie(tekst) {
   else if (statusEl.value === 'wacht') { statusEl.value = 'lopend'; }
 }
 
-function renderActieLog(log) {
+async function logActie(label) {
+  if (!editingId) return;
+  const chip = ACTIE_CHIPS.find(c => c.label === label);
+  if (!chip) return;
+  const vandaag = new Date().toISOString().slice(0, 10);
+  const idx = projecten.findIndex(x => x.id === editingId);
+  if (idx === -1) return;
+  const p = projecten[idx];
+  p.laatste_actie       = label;
+  p.laatste_actie_datum = vandaag;
+  let log = Array.isArray(p.acties_log) ? [...p.acties_log] : [];
+  log.unshift({ actie: label, datum: vandaag, type: chip.type, emoji: chip.emoji });
+  if (log.length > 20) log = log.slice(0, 20);
+  p.acties_log = log;
+  projecten[idx] = p;
+  await slaOpInDb(p);
+  renderLaatsteActieChips(p.laatste_actie);
+  renderTijdlijn(p.acties_log);
+  render();
+}
+
+function renderLaatsteActieChips(huidig) {
+  document.querySelectorAll('.laatste-actie-chip').forEach(c => {
+    c.classList.toggle('actief', c.dataset.label === huidig);
+  });
+  const display = document.getElementById('laatste-actie-display');
+  if (!display) return;
+  if (huidig) {
+    const chip = ACTIE_CHIPS.find(c => c.label === huidig);
+    display.textContent = (chip ? chip.emoji + ' ' : '') + huidig;
+    display.style.display = 'inline-flex';
+  } else {
+    display.style.display = 'none';
+  }
+}
+
+function renderTijdlijn(log) {
   const wrap  = document.getElementById('actie-log');
   const items = document.getElementById('actie-log-items');
   if (!log || log.length === 0) { wrap.style.display = 'none'; return; }
   wrap.style.display = 'block';
-  items.innerHTML = log.map(l => `
-    <div class="actie-log-item">
-      <span class="actie-log-datum">${l.datum ? fmt(l.datum) : '—'}</span>
-      <span class="actie-log-tekst">${l.actie || ''}</span>
-    </div>`).join('');
+  items.innerHTML = log.map(l => {
+    const chip = ACTIE_CHIPS.find(c => c.label === l.actie);
+    const emoji = l.emoji || (chip ? chip.emoji : '•');
+    const isExtern = l.type === 'extern';
+    return '<div class="tijdlijn-item' + (isExtern ? ' tijdlijn-extern' : '') + '">'
+      + '<span class="tijdlijn-emoji">' + emoji + '</span>'
+      + '<span class="tijdlijn-actie">' + (l.actie || '') + '</span>'
+      + '<span class="tijdlijn-datum">' + (l.datum ? fmt(l.datum) : '—') + '</span>'
+      + '</div>';
+  }).join('');
 }
+
+function renderActieLog(log) {
+  renderTijdlijn(log);
+}
+
 
 // ── Project CRUD ──────────────────────────────────────────
 async function saveProject() {
@@ -906,7 +1003,9 @@ async function saveProject() {
     aanmelder:     document.getElementById('f-aanmelder').value.trim(),
     notitie:       document.getElementById('f-notitie').value.trim(),
     schilder:      document.getElementById('f-schilder').checked,
-    uitvoerder:    document.getElementById('f-uitvoerder').value || null,
+    uitvoerder:          document.getElementById('f-uitvoerder').value || null,
+    laatste_actie:       editingId ? (projecten.find(x=>x.id===editingId)?.laatste_actie || null) : null,
+    laatste_actie_datum: editingId ? (projecten.find(x=>x.id===editingId)?.laatste_actie_datum || null) : null,
   };
   if (!p.nummer || !p.adres) { alert('Vul minimaal kenmerk en adres in.'); return; }
   const dubbel = projecten.find(x => x.nummer.trim().toLowerCase() === p.nummer.toLowerCase() && x.id !== editingId);
@@ -917,12 +1016,7 @@ async function saveProject() {
   if (editingId) {
     const idx      = projecten.findIndex(x => x.id === editingId);
     const bestaand = projecten[idx];
-    let log = Array.isArray(bestaand.acties_log) ? [...bestaand.acties_log] : [];
-    if (bestaand.actie && (bestaand.actie !== p.actie || bestaand.datum !== p.datum)) {
-      log.unshift({ actie: bestaand.actie, datum: bestaand.datum || '' });
-      if (log.length > 5) log = log.slice(0, 5);
-    }
-    p.acties_log = log;
+    p.acties_log = Array.isArray(bestaand.acties_log) ? bestaand.acties_log : [];
     projecten[idx] = { ...bestaand, ...p };
     await slaOpInDb(projecten[idx]);
   } else {

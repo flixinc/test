@@ -471,6 +471,52 @@ td { padding: 11px 14px; vertical-align: middle; }
 .actie-log-datum { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); white-space: nowrap; min-width: 60px; }
 .actie-log-tekst { flex: 1; }
 
+/* ── Laatste actie chips ─────────────────────────────────── */
+.laatste-actie-sectie label { margin-bottom: 4px; }
+.la-hint { font-size: 10px; color: var(--muted); text-transform: none; letter-spacing: 0; font-weight: 400; }
+.laatste-actie-display {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(var(--orange-rgb),.12); border: 1px solid var(--orange);
+  color: var(--orange); border-radius: 4px; padding: 4px 10px;
+  font-size: 12px; font-weight: 600; margin-bottom: 8px;
+}
+.laatste-actie-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.laatste-actie-chip {
+  background: var(--surface2); border: 1px solid var(--border); color: var(--muted);
+  border-radius: 20px; padding: 5px 12px; cursor: pointer; font-size: 12px;
+  font-family: 'IBM Plex Sans', sans-serif; transition: all .15s; white-space: nowrap;
+}
+.laatste-actie-chip:hover { border-color: var(--orange); color: var(--orange); background: rgba(var(--orange-rgb),0.07); }
+.laatste-actie-chip.actief { border-color: var(--orange); color: var(--orange); background: rgba(var(--orange-rgb),0.15); font-weight: 600; }
+.laatste-actie-chip.chip-extern { border-color: #4a90d9; color: #4a90d9; }
+.laatste-actie-chip.chip-extern:hover { background: rgba(74,144,217,0.1); }
+.laatste-actie-chip.chip-extern.actief { background: rgba(74,144,217,0.15); font-weight: 600; }
+
+/* ── Tijdlijn ────────────────────────────────────────────── */
+.tijdlijn-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 12px;
+}
+.tijdlijn-item:last-child { border-bottom: none; }
+.tijdlijn-emoji { font-size: 14px; flex-shrink: 0; width: 20px; text-align: center; }
+.tijdlijn-actie { flex: 1; color: var(--text); }
+.tijdlijn-datum { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); white-space: nowrap; }
+.tijdlijn-extern .tijdlijn-actie { color: #4a90d9; }
+
+/* ── Laatste actie op kaart / tabel ─────────────────────── */
+.card-laatste-actie {
+  font-size: 12px; color: var(--text); margin-top: 4px; margin-bottom: 4px;
+  display: flex; align-items: center; gap: 5px;
+}
+.card-actie-datum {
+  font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+  color: var(--muted); margin-left: 4px;
+}
+.proj-laatste-actie { font-size: 12px; color: var(--text); font-weight: 500; }
+
+/* ── Aandacht: inactief type ─────────────────────────────── */
+.aandacht-card-inactief { border-left: 3px solid var(--orange); }
+
 /* ── Empty state ────────────────────────────────────────── */
 .empty-state { padding: 50px 24px; text-align: center; color: var(--muted); font-size: 13px; }
 
