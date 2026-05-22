@@ -737,4 +737,121 @@ textarea { resize: vertical; min-height: 56px; }
 .oa-add-btn:hover { background: rgba(var(--orange-rgb),0.25); border-color: var(--orange); }
 
 /* ── Scrollbar ──────────────────────────────────────────── */
-::-webkit-scrollbar
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ── Responsive ─────────────────────────────────────────── */
+@media (max-width: 700px) {
+  .table-wrap { display: none; }
+  .cards { display: flex; }
+  .filter-btns { display: none; }
+  header { padding: 10px 16px; gap: 8px; }
+  .toolbar { padding: 12px 16px; }
+  .main { padding: 14px 16px; }
+  .header-stats { gap: 0; flex-shrink: 0; }
+  .stat { padding: 4px 5px; }
+  .logo { flex-shrink: 0; }
+  .header-tools { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: none; gap: 6px; padding: 2px 0; min-width: 0; }
+  .header-tools::-webkit-scrollbar { display: none; }
+  .wr-btn { flex-shrink: 0; }
+  .loc-list { width: 100%; border-right: none; }
+  #loc-map { display: none; }
+  #view-locaties.active { height: auto; }
+  .loc-body { flex-direction: column; }
+}
+
+@media (min-width: 701px) {
+  .modal-overlay { align-items: center; }
+  .modal { border-radius: 8px; max-width: 540px; }
+  .modal-handle { display: none; }
+}
+
+/* ── Kalender ───────────────────────────────────────────── */
+#view-kalender { padding: 16px 20px; }
+.kal-toolbar {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+}
+.kal-nav-btn {
+  background: none; border: 1px solid var(--border); color: var(--muted);
+  border-radius: 4px; width: 30px; height: 30px; cursor: pointer; font-size: 15px;
+  display: flex; align-items: center; justify-content: center; transition: all .15s;
+  flex-shrink: 0;
+}
+.kal-nav-btn:hover { border-color: var(--orange); color: var(--orange); }
+.kal-titel {
+  font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 600;
+  color: var(--orange); min-width: 160px;
+}
+.kal-vandaag-btn {
+  background: none; border: 1px solid var(--border); color: var(--muted);
+  border-radius: 4px; padding: 4px 12px; cursor: pointer;
+  font-size: 11px; font-family: 'IBM Plex Sans', sans-serif; transition: all .15s;
+}
+.kal-vandaag-btn:hover { border-color: var(--orange); color: var(--orange); }
+.kal-week-headers {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  gap: 4px; margin-bottom: 4px;
+}
+.kal-dag-header {
+  text-align: center; font-size: 10px; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--muted); padding: 5px 0;
+}
+.kal-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+}
+.kal-dag {
+  min-height: 110px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 5px; padding: 8px; overflow: hidden;
+}
+.kal-dag.vandaag { border-color: var(--orange); }
+.kal-dag.ander-maand { opacity: .3; pointer-events: none; }
+.kal-dag-num {
+  font-size: 12px; font-weight: 600; color: var(--muted);
+  margin-bottom: 6px; line-height: 1;
+}
+.kal-dag.vandaag .kal-dag-num {
+  color: var(--orange); background: rgba(var(--orange-rgb),.15);
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%; margin-bottom: 5px;
+}
+.kal-project {
+  display: flex; align-items: flex-start; gap: 5px; padding: 4px 6px;
+  border-radius: 3px; cursor: pointer; margin-bottom: 4px;
+  background: var(--surface2); transition: background .12s;
+}
+.kal-project:hover { background: rgba(var(--orange-rgb),.12); }
+.kal-project-dot {
+  width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 4px;
+}
+.kal-project-text { overflow: hidden; flex: 1; min-width: 0; }
+.kal-project-num {
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600;
+  color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  display: flex; align-items: center; justify-content: space-between; gap: 4px;
+}
+.kal-project-adres {
+  font-size: 10px; color: var(--text); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; opacity: .75; margin-bottom: 1px;
+}
+.kal-project-actie {
+  font-size: 10px; color: var(--muted); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.kal-project-tijd {
+  font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+  color: var(--orange); flex-shrink: 0; margin-top: 0;
+}
+.kal-leeg {
+  grid-column: 1 / -1; text-align: center;
+  font-size: 13px; color: var(--muted); padding: 60px 0;
+}
+
+@media (max-width: 700px) {
+  #view-kalender { padding: 12px 10px; }
+  .kal-dag { min-height: 52px; padding: 4px 3px; }
+  .kal-dag-num { font-size: 10px; }
+  .kal-project-actie, .kal-project-tijd { display: none; }
+  .kal-project { padding: 2px 3px; }
+  .kal-titel { font-size: 13px; min-width: 130px; }
+}
