@@ -505,22 +505,20 @@ function renderUitvragenSectie() {
   }
   document.getElementById('extern-lijst').innerHTML = onderaannemers.map(oa => {
     const a = aanvragen.find(x => x.onderaannemer_id === oa.id);
-    const gemaild = a?.datum_gevraagd;
-    const ontvangen = a?.ontvangen;
+    const gemaild = a ? a.datum_gevraagd : null;
+    const ontvangen = a ? a.ontvangen : false;
     const islaat = gemaild && !ontvangen && Math.floor((Date.now() - new Date(a.datum_gevraagd)) / 86400000) >= 14;
-    return `<div class="extern-item${gemaild ? ' extern-item-actief' : ''}${islaat ? ' extern-item-laat' : ''}">
-      <div class="extern-item-naam">${oa.naam}</div>
-      <div class="extern-item-acties">
-        ${gemaild
-          ? `<span class="extern-item-datum">${fmtCreated(a.datum_gevraagd)}</span>
-             <label class="extern-ontvangen">
-               <input type="checkbox" ${ontvangen ? 'checked' : ''} onchange="markeerOntvangen(${oa.id}, this.checked)">
-               <span>Ontvangen</span>
-             </label>`
-          : `<button class="extern-mail-btn" onclick="mailAanvraag(${oa.id})">Aanvraag mailen</button>`
-        }
-      </div>
-    </div>`;
+    const extraClass = (gemaild ? ' extern-item-actief' : '') + (islaat ? ' extern-item-laat' : '');
+    const acties = gemaild
+      ? '<span class="extern-item-datum">' + fmtCreated(a.datum_gevraagd) + '</span>'
+        + '<label class="extern-ontvangen">'
+        + '<input type="checkbox"' + (ontvangen ? ' checked' : '') + ' onchange="markeerOntvangen(' + oa.id + ', this.checked)">'
+        + '<span>Ontvangen</span></label>'
+      : '<button class="extern-mail-btn" onclick="mailAanvraag(' + oa.id + ')">Aanvraag mailen</button>';
+    return '<div class="extern-item' + extraClass + '">'
+      + '<div class="extern-item-naam">' + oa.naam + '</div>'
+      + '<div class="extern-item-acties">' + acties + '</div>'
+      + '</div>';
   }).join('');
   checkAlleOntvangen(aanvragen);
 }
@@ -1516,3 +1514,211 @@ function renderKalender() {
     const projectHtml = dagProjecten.map(p => {
       const tijd = p.datum?.includes('T') ? p.datum.slice(11, 16) : '';
       const kleur = KAL_STATUS_KLEUR[p.status] || '#666';
+      return `<div class="kal-project" onclick="event.stopPropagation();openModal(${p.id})">
+        <div class="kal-project-dot" style="background:${kleur}"></div>
+        <div class="kal-project-text">
+          <div class="kal-project-num">${p.nummer + (tijd ? '<span class="kal-project-tijd">' + tijd + '</span>' : '')}</div>
+          ${p.adres ? '<div class="kal-project-adres">' + p.adres + '</div>' : ''}
+          ${p.actie ? '<div class="kal-project-actie">' + p.actie + '</div>' : ''}
+        </div>
+      </div>`;
+    }).join('');
+
+    html += `<div class="${klassen}">
+      <div class="kal-dag-num">${weergave}</div>
+      ${projectHtml}
+    </div>`;
+  }
+
+  if (!heeftProjecten) {
+    html += `<div class="kal-leeg">Geen projecten met datum in ${KAL_MAANDEN[kalMaand]}</div>`;
+  }
+
+  grid.innerHTML = html;
+}
+
+function kalNavigeer(delta) {
+  kalMaand += delta;
+  if (kalMaand > 11) { kalMaand = 0; kalJaar++; }
+  if (kalMaand < 0)  { kalMaand = 11; kalJaar--; }
+  renderKalender();
+}
+
+function kalNaarVandaag() {
+  const nu = new Date();
+  kalJaar  = nu.getFullYear();
+  kalMaand = nu.getMonth();
+  renderKalender();
+}
+
+// ── Deel kaart ────────────────────────────────────────────
+function deelKaart() {
+  const p = projecten.find(x => x.id === editingId);
+  if (!p) return;
+
+  const ORANGE  = getComputedStyle(document.documentElement).getPropertyValue('--orange').trim() || '#E8611A';
+  const isLight = document.body.classList.contains('light');
+  const C = {
+    bg:      isLight ? '#ffffff' : '#111111',
+    footer:  isLight ? '#f0f0ee' : '#1a1a1a',
+    lijn:    isLight ? '#d0d0ce' : '#2a2a2a',
+    chip:    isLight ? '#e6e6e4' : '#222222',
+    chipRnd: isLight ? '#d0d0ce' : '#333333',
+    tekst:   isLight ? '#1a1a1a' : '#e8e8e8',
+    muted:   isLight ? '#888888' : '#555555',
+    notitie: isLight ? '#444444' : '#aaaaaa',
+    ruimte:  isLight ? '#555555' : '#999999',
+  };
+
+  // ── Bereken notitie-regels vooraf (voor dynamische hoogte) ──
+  const W = 390;
+  const REGEL_H = 17, NOTITIE_FONT = '400 12px "IBM Plex Sans", sans-serif';
+  const tmpC = document.createElement('canvas').getContext('2d');
+  tmpC.font = NOTITIE_FONT;
+  const notitieRegels = [];
+  if (p.notitie) {
+    const woorden = p.notitie.split(' ');
+    let huidig = '';
+    for (const w of woorden) {
+      const test = huidig ? huidig + ' ' + w : w;
+      if (tmpC.measureText(test).width < W - 40) {
+        huidig = test;
+      } else {
+        if (huidig) notitieRegels.push(huidig);
+        huidig = w;
+      }
+    }
+    if (huidig) notitieRegels.push(huidig);
+  } else if (p.actie) {
+    notitieRegels.push(p.actie);
+  }
+
+  // Vaste blokken + ruimte voor notitie-regels + datum + footer
+  const VASTE_TOP   = 168; // t/m OPDRACHT label
+  const NOTITIE_TOP = 184;
+  const notitieH    = Math.max(notitieRegels.length * REGEL_H, 18);
+  const DATUM_TOP   = NOTITIE_TOP + notitieH + 20; // lijn + ruimte
+  const H           = DATUM_TOP + (p.datum ? 56 : 10) + 32; // datum blok + onderste padding
+
+  const canvas = document.createElement('canvas');
+  canvas.width = W * 2; canvas.height = H * 2;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(2, 2);
+
+  // Achtergrond
+  ctx.fillStyle = C.bg;
+  ctx.beginPath(); ctx.roundRect(0, 0, W, H, 12); ctx.fill();
+
+  // Header: COMPIER
+  ctx.fillStyle = ORANGE;
+  ctx.font = '700 11px "IBM Plex Mono", monospace';
+  ctx.fillText('COMPIER', 20, 26);
+
+  // Lijn
+  ctx.strokeStyle = C.lijn; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(20, 36); ctx.lineTo(W - 16, 36); ctx.stroke();
+
+  // Projectnummer
+  ctx.fillStyle = ORANGE;
+  ctx.font = '700 26px "IBM Plex Mono", monospace';
+  ctx.fillText(p.nummer, 20, 72);
+
+  // Ruimte chip
+  if (p.ruimte) {
+    ctx.font = '600 10px "IBM Plex Mono", monospace';
+    const rw = ctx.measureText(p.ruimte).width + 14;
+    ctx.fillStyle = C.chip;
+    ctx.beginPath(); ctx.roundRect(20, 80, rw, 18, 3); ctx.fill();
+    ctx.strokeStyle = C.chipRnd; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.roundRect(20, 80, rw, 18, 3); ctx.stroke();
+    ctx.fillStyle = C.ruimte;
+    ctx.fillText(p.ruimte, 27, 92.5);
+  }
+
+  // Adres
+  ctx.fillStyle = C.tekst;
+  ctx.font = '600 14px "IBM Plex Sans", sans-serif';
+  ctx.fillText(p.adres || '—', 20, 122);
+  ctx.fillStyle = C.muted;
+  ctx.font = '400 11px "IBM Plex Sans", sans-serif';
+  ctx.fillText(p.opdrachtgever || '', 20, 140);
+
+  // Lijn
+  ctx.strokeStyle = C.lijn;
+  ctx.beginPath(); ctx.moveTo(20, 152); ctx.lineTo(W - 16, 152); ctx.stroke();
+
+  // Opdracht label
+  ctx.fillStyle = C.tekst;
+  ctx.font = '600 9px "IBM Plex Sans", sans-serif';
+  ctx.letterSpacing = '1.5px';
+  ctx.fillText('OPDRACHT', 20, VASTE_TOP);
+  ctx.letterSpacing = '0px';
+
+  // Notitie — alle regels
+  ctx.fillStyle = C.notitie;
+  ctx.font = NOTITIE_FONT;
+  notitieRegels.forEach((r, i) => {
+    ctx.fillText(r, 20, NOTITIE_TOP + i * REGEL_H);
+  });
+
+  // Lijn vóór datum
+  ctx.strokeStyle = C.lijn;
+  ctx.beginPath(); ctx.moveTo(20, DATUM_TOP - 10); ctx.lineTo(W - 16, DATUM_TOP - 10); ctx.stroke();
+
+  // Datum
+  if (p.datum) {
+    const d    = new Date(p.datum);
+    const dag  = d.toLocaleDateString('nl-NL', { weekday: 'long' });
+    const dat  = d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' });
+    const tijd = p.datum.includes('T') ? p.datum.slice(11, 16) : null;
+    ctx.fillStyle = C.tekst;
+    ctx.font = '600 9px "IBM Plex Sans", sans-serif';
+    ctx.letterSpacing = '1.5px';
+    ctx.fillText('DATUM', 20, DATUM_TOP + 6);
+    ctx.letterSpacing = '0px';
+    ctx.fillStyle = ORANGE;
+    ctx.font = '600 13px "IBM Plex Mono", monospace';
+    ctx.fillText(dag.charAt(0).toUpperCase() + dag.slice(1) + ' — ' + dat + (tijd ? '  ' + tijd : ''), 20, DATUM_TOP + 24);
+  }
+
+  // Oranje balk links — als laatste getekend zodat hij altijd schoon bovenop staat
+  ctx.fillStyle = ORANGE;
+  ctx.beginPath(); ctx.roundRect(0, 0, 4, H, [12, 0, 0, 12]); ctx.fill();
+
+  // Naar PNG en openen in nieuw tabblad (iOS: lang indrukken → opslaan/delen)
+  const imgUrl = canvas.toDataURL('image/png');
+  const bgPagina = isLight ? '#f0f0ee' : '#0f0f0f';
+  const win = window.open('', '_blank');
+  if (win) {
+    win.document.write(`<!DOCTYPE html><html><head>
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <title>${p.nummer}</title>
+      <style>
+        * { box-sizing:border-box; margin:0; padding:0; }
+        body { background:${bgPagina}; display:flex; flex-direction:column;
+               align-items:center; justify-content:center; min-height:100vh;
+               gap:20px; padding:24px 16px; font-family:'IBM Plex Sans',sans-serif; }
+        img { width:390px; max-width:100%; border-radius:12px;
+              box-shadow:0 8px 32px rgba(0,0,0,.4); }
+        .hint { color:#666; font-size:12px; text-align:center; }
+        .terug {
+          display:inline-flex; align-items:center; gap:6px;
+          padding:10px 20px; border-radius:6px;
+          background:${isLight ? '#e6e6e4' : '#1e1e1e'};
+          border:1px solid ${isLight ? '#d0d0ce' : '#2a2a2a'};
+          color:${isLight ? '#1a1a1a' : '#e8e8e8'};
+          font-size:13px; font-weight:600; cursor:pointer;
+          text-decoration:none; letter-spacing:0.02em;
+        }
+        .terug:hover { border-color:#E8611A; color:#E8611A; }
+      </style></head><body>
+      <img src="${imgUrl}" alt="${p.nummer}">
+      <p class="hint">Houd de afbeelding ingedrukt om op te slaan of te delen</p>
+      <a class="terug" onclick="window.close()" href="#">← Terug naar dashboard</a>
+    </body></html>`);
+    win.document.close();
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────
+initAccentSwa
