@@ -537,6 +537,13 @@ td { padding: 11px 14px; vertical-align: middle; }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .form-group { display: flex; flex-direction: column; gap: 4px; }
 .form-group.full { grid-column: 1 / -1; }
+.schilder-toggle-row {
+  grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; padding: 6px 0;
+}
+.schilder-toggle-row > label:first-child {
+  font-size: 11px; color: var(--muted); text-transform: uppercase;
+  letter-spacing: 0.08em; font-weight: 500; white-space: nowrap;
+}
 label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; }
 input[type=text], input[type=date], input[type=datetime-local], select, textarea {
   background: var(--bg);
