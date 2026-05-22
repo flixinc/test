@@ -376,6 +376,13 @@ header {
 .card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .card-num { font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 600; color: var(--orange); }
 .card-addr { font-size: 14px; font-weight: 500; margin-bottom: 3px; }
+.card-uitvoerder {
+  font-size: 11px; color: var(--orange); font-weight: 500;
+  margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.proj-uitvoerder {
+  font-size: 11px; color: var(--orange); font-weight: 500; margin-top: 2px;
+}
 .card-client { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
 .card-actie { font-size: 13px; color: var(--text); }
 .card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; }

@@ -446,6 +446,16 @@ async function laadOnderaannemers() {
     console.warn('Onderaannemers laden mislukt:', e.message);
   }
   renderOnderaannemersBeheer();
+  vulUitvoerderDropdown();
+}
+
+function vulUitvoerderDropdown() {
+  const sel = document.getElementById('f-uitvoerder');
+  if (!sel) return;
+  const huidig = sel.value;
+  sel.innerHTML = '<option value="">— Geen onderaannemer —</option>'
+    + onderaannemers.map(o => '<option value="' + o.naam + '">' + o.naam + '</option>').join('');
+  if (huidig) sel.value = huidig;
 }
 
 function renderOnderaannemersBeheer() {
@@ -599,6 +609,7 @@ function render() {
         <td>
           <div style="font-size:13px">${p.opdrachtgever}</div>
           ${p.contact ? `<div class="proj-client">${p.contact.split('—')[0].trim()}</div>` : ''}
+          ${p.uitvoerder ? `<div class="proj-uitvoerder">🔧 ${p.uitvoerder}</div>` : ''}
         </td>
         <td><span class="status-badge ${STATUS_CLASS[p.status]}"><span class="status-dot"></span>${STATUS_LABELS[p.status]}</span></td>
         <td>
@@ -621,6 +632,7 @@ function render() {
       </div>
       <div class="card-addr">${p.adres}</div>
       <div class="card-client">${p.opdrachtgever}${p.contact ? ' · ' + p.contact.split('—')[0].trim() : ''}</div>
+      ${p.uitvoerder ? '<div class="card-uitvoerder">🔧 ' + p.uitvoerder + '</div>' : ''}
       ${p.notitie ? `<div class="card-actie" style="color:var(--muted);font-size:12px;margin-bottom:6px">${p.notitie.substring(0,80)}…</div>` : ''}
       ${p.status !== 'klaar' && p.actie ? `<div class="card-actie">${p.actie}</div>` : ''}
       ${(p.status !== 'klaar' && p.datum) || p.ruimte ? `<div class="card-footer">
@@ -698,6 +710,7 @@ function openModal(id) {
     document.getElementById('f-aanmelder').value = p.aanmelder || '';
     document.getElementById('f-notitie').value = p.notitie || '';
     document.getElementById('f-schilder').checked = !!p.schilder;
+    document.getElementById('f-uitvoerder').value = p.uitvoerder || '';
     renderActieLog(p.acties_log || []);
     document.querySelectorAll('.actie-chip').forEach(c => {
       c.classList.toggle('selected', c.textContent === (p.actie || ''));
@@ -712,6 +725,7 @@ function openModal(id) {
   } else {
     ['f-nummer','f-adres','f-ruimte','f-opdrachtgever','f-actie','f-contact','f-aanmelder','f-notitie'].forEach(i => document.getElementById(i).value = '');
     document.getElementById('f-schilder').checked = false;
+    document.getElementById('f-uitvoerder').value = '';
     document.getElementById('f-status').value = 'lopend';
     onStatusChange('lopend');
     document.getElementById('f-datum').value = '';
@@ -892,6 +906,7 @@ async function saveProject() {
     aanmelder:     document.getElementById('f-aanmelder').value.trim(),
     notitie:       document.getElementById('f-notitie').value.trim(),
     schilder:      document.getElementById('f-schilder').checked,
+    uitvoerder:    document.getElementById('f-uitvoerder').value || null,
   };
   if (!p.nummer || !p.adres) { alert('Vul minimaal kenmerk en adres in.'); return; }
   const dubbel = projecten.find(x => x.nummer.trim().toLowerCase() === p.nummer.toLowerCase() && x.id !== editingId);
