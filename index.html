@@ -2,7 +2,7 @@
   ╔══════════════════════════════════════════════════════════════╗
   ║  COMPIER — Projecten Dashboard                              ║
   ╠══════════════════════════════════════════════════════════════╣
-  ║  v2.0  2026-05-14  Aandacht-sectie, badge, created_at sortering ║
+  ║  v2.2  2026-05-22  Uitvragen sectie, onderaannemers         ║
   ╚══════════════════════════════════════════════════════════════╝
 -->
 <!DOCTYPE html>
@@ -232,6 +232,7 @@
       <button class="filter-btn" data-filter="lopend">Lopend</button>
       <button class="filter-btn" data-filter="wacht">Wacht</button>
       <button class="filter-btn" data-filter="klaar">Klaar</button>
+      <button class="filter-btn" data-filter="schilder">🖌 Schilder</button>
     </div>
     <button class="btn-add" onclick="openModal()">+ Nieuw</button>
   </div>
@@ -332,6 +333,14 @@
           <option value="klaar">Klaar</option>
         </select>
       </div>
+      <div class="schilder-toggle-row">
+        <label>Type</label>
+        <label class="schilder-switch">
+          <input type="checkbox" id="f-schilder">
+          <span class="schilder-track"><span class="schilder-thumb"></span></span>
+          <span class="schilder-switch-label">Schilderopdracht</span>
+        </label>
+      </div>
       <div class="form-group full">
         <label>Adres werklocatie</label>
         <input type="text" id="f-adres" placeholder="Straat + nr, postcode, Plaats">
@@ -404,4 +413,31 @@
 
     <!-- Uitvragen sectie (alleen bij bestaand project) -->
     <div class="uitvragen-sectie" id="uitvragen-sectie" style="display:none">
-      <div class="uitvragen-he
+      <div class="uitvragen-header">
+        <div class="uitvragen-label">Extern uitvragen</div>
+        <label class="extern-toggle-wrap">
+          <input type="checkbox" id="extern-toggle" onchange="toggleExternInhoud(this.checked)">
+          <span class="extern-toggle-switch"></span>
+          <span class="extern-toggle-text">Aanvragen versturen</span>
+        </label>
+      </div>
+      <div id="extern-inhoud" style="display:none">
+        <div id="extern-lijst"></div>
+        <div id="extern-klaar" class="extern-klaar" style="display:none">✓ Alle offertes ontvangen</div>
+      </div>
+    </div>
+
+    <!-- Modal knoppen -->
+    <div class="modal-actions">
+      <button class="btn-delete" id="btn-delete" onclick="deleteProject()" style="display:none">Verwijderen</button>
+      <button class="btn-cancel" onclick="closeModal()">Annuleren</button>
+      <button class="btn-deel" id="btn-deel" onclick="deelKaart()" title="Deel als afbeelding" style="display:none">Deel</button>
+      <button class="btn-agenda" id="btn-agenda" onclick="agendaPunt()" title="Maak agendapunt in Google Calendar">📅</button>
+      <button class="btn-save" onclick="saveProject()">OPSLAAN</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
