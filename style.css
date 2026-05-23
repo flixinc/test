@@ -415,13 +415,7 @@ th {
 }
 th:hover { color: var(--orange); }
 tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; cursor: pointer; }
-tbody tr[data-status="lopend"]        { box-shadow: inset 3px 0 0 var(--green); }
-tbody tr[data-status="offerte"]       { box-shadow: inset 3px 0 0 var(--blue); }
-tbody tr[data-status="wacht"],
-tbody tr[data-status="wacht-reactie"],
-tbody tr[data-status="wacht-akkoord"] { box-shadow: inset 3px 0 0 var(--yellow); }
-tbody tr[data-status="klaar"]         { box-shadow: inset 3px 0 0 var(--muted); }
-tbody tr:hover                        { background: var(--surface2); box-shadow: inset 3px 0 0 var(--orange); }
+tbody tr:hover { background: var(--surface2); box-shadow: inset 3px 0 0 var(--orange); }
 tbody tr:last-child { border-bottom: none; }
 td { padding: 11px 14px; vertical-align: middle; }
 .proj-num { font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 600; color: var(--orange); }
