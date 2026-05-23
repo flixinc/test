@@ -981,7 +981,7 @@ function renderLaatsteActieChips(huidig) {
   if (!display) return;
   if (huidig) {
     const chip = ACTIE_CHIPS.find(c => c.label === huidig);
-    display.textContent = (chip ? chip.emoji + ' ' : '') + huidig;
+    display.textContent = huidig;
     display.style.display = 'inline-flex';
     if (wisBtn) wisBtn.style.display = 'inline-flex';
   } else {

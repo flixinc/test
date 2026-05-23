@@ -939,19 +939,12 @@ textarea { resize: vertical; min-height: 56px; }
 .wis-actie-btn {
   display: none;
   align-items: center;
-  justify-content: center;
   background: none;
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  font-size: 14px;
-  line-height: 1;
+  border: none;
+  padding: 6px 0 0 0;
+  font-size: 11px;
   color: var(--muted);
   cursor: pointer;
-  padding: 0;
-  margin-left: 6px;
-  flex-shrink: 0;
-  transition: color 0.15s, border-color 0.15s;
+  gap: 4px;
 }
-.wis-actie-btn:hover { color: #e74c3c; border-color: #e74c3c; }
+.wis-actie-btn:hover { color: #e74c3c; }
