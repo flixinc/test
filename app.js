@@ -623,7 +623,7 @@ function render() {
   else {
     empty.style.display = 'none';
     tbody.innerHTML = data.map(p => `
-      <tr onclick="openModal(${p.id})">
+      <tr onclick="openModal(${p.id})" data-status="${p.status}">
         <td>
           <div class="proj-num">${p.nummer}</div>
           ${p.schilder ? '<span class="schilder-badge">🖌 Schilder</span>' : ''}

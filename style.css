@@ -414,7 +414,13 @@ th {
   user-select: none;
 }
 th:hover { color: var(--orange); }
-tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; cursor: pointer; }
+tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; cursor: pointer; border-left: 3px solid transparent; }
+tbody tr[data-status="lopend"]      { border-left-color: var(--green); }
+tbody tr[data-status="offerte"]     { border-left-color: var(--blue); }
+tbody tr[data-status="wacht"],
+tbody tr[data-status="wacht-reactie"],
+tbody tr[data-status="wacht-akkoord"] { border-left-color: var(--yellow); }
+tbody tr[data-status="klaar"]       { border-left-color: var(--muted); }
 tbody tr:last-child { border-bottom: none; }
 tbody tr:hover { background: var(--surface2); box-shadow: inset 3px 0 0 var(--orange); }
 td { padding: 11px 14px; vertical-align: middle; }
@@ -424,9 +430,9 @@ td { padding: 11px 14px; vertical-align: middle; }
 
 /* ── Status badges ──────────────────────────────────────── */
 .status-badge {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 3px 8px; border-radius: 3px;
-  font-size: 11px; font-weight: 500; letter-spacing: 0.03em; white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 4px;
+  font-size: 12px; font-weight: 500; letter-spacing: 0.02em; white-space: nowrap;
 }
 .status-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 .s-offerte    { background: rgba(74,144,217,0.15); color: var(--blue); }
@@ -618,6 +624,7 @@ td { padding: 11px 14px; vertical-align: middle; }
   letter-spacing: 0.08em; font-weight: 500; white-space: nowrap;
 }
 label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; }
+.form-group label { font-size: 12px; text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--muted); }
 input[type=text], input[type=date], input[type=datetime-local], select, textarea {
   background: var(--bg);
   border: 1px solid var(--border);
@@ -631,6 +638,12 @@ input[type=text], input[type=date], input[type=datetime-local], select, textarea
   width: 100%;
   -webkit-appearance: none;
   color-scheme: dark;
+}
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
 }
 input[type=text]:focus, input[type=date]:focus, input[type=datetime-local]:focus, select:focus, textarea:focus { border-color: var(--orange); }
 select option { background: var(--surface2); }
@@ -952,3 +965,25 @@ textarea { resize: vertical; min-height: 56px; }
 }
 .tijdlijn-item:hover .tijdlijn-wis { opacity: 1; }
 .tijdlijn-wis:hover { color: #e74c3c; }
+
+/* ── Modal secties ──────────────────────────────────────── */
+.modal-section {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0 2px;
+}
+.modal-section-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.modal-section-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
