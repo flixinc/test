@@ -426,7 +426,7 @@ function renderAandacht(lijst) {
         + '</div>'
         + '<div class="aandacht-card-body">'
         + '<span class="aandacht-adres">' + p.adres + '</span>'
-        + '<span class="aandacht-actie">' + emoji + ' ' + (p.laatste_actie || '') + ' → ' + (p.actie || '') + '</span>'
+        + '<span class="aandacht-actie">' + (p.laatste_actie || '') + ' → ' + (p.actie || '') + '</span>'
         + '</div>'
         + '</div>';
     }
@@ -639,7 +639,7 @@ function render() {
           ${p.uitvoerder ? `<div class="proj-uitvoerder">🔧 ${p.uitvoerder}</div>` : ''}
         </td>
         <td>
-          ${p.laatste_actie ? `<div class="proj-laatste-actie">${ACTIE_CHIPS.find(c=>c.label===p.laatste_actie)?.emoji||'•'} ${p.laatste_actie}</div>` : '<div class="proj-client">—</div>'}
+          ${p.laatste_actie ? `<div class="proj-laatste-actie">${p.laatste_actie}</div>` : '<div class="proj-client">—</div>'}
           ${p.laatste_actie_datum ? `<div class="proj-client">${fmt(p.laatste_actie_datum)}</div>` : ''}
         </td>
         <td><span class="status-badge ${STATUS_CLASS[p.status]}"><span class="status-dot"></span>${STATUS_LABELS[p.status]}</span></td>
@@ -664,7 +664,7 @@ function render() {
       <div class="card-addr">${p.adres}</div>
       <div class="card-client">${p.opdrachtgever}${p.contact ? ' · ' + p.contact.split('—')[0].trim() : ''}</div>
       ${p.uitvoerder ? '<div class="card-uitvoerder">🔧 ' + p.uitvoerder + '</div>' : ''}
-      ${p.laatste_actie ? '<div class="card-laatste-actie">' + (ACTIE_CHIPS.find(c=>c.label===p.laatste_actie)?.emoji||'•') + ' ' + p.laatste_actie + (p.laatste_actie_datum ? ' <span class="card-actie-datum">' + fmt(p.laatste_actie_datum) + '</span>' : '') + '</div>' : ''}
+      ${p.laatste_actie ? '<div class="card-laatste-actie">' + p.laatste_actie + (p.laatste_actie_datum ? ' <span class="card-actie-datum">' + fmt(p.laatste_actie_datum) + '</span>' : '') + '</div>' : ''}
       ${p.notitie ? `<div class="card-actie" style="color:var(--muted);font-size:12px;margin-bottom:6px">${p.notitie.substring(0,80)}…</div>` : ''}
       ${p.status !== 'klaar' && p.actie ? `<div class="card-actie">${p.actie}</div>` : ''}
       ${(p.status !== 'klaar' && p.datum) || p.ruimte ? `<div class="card-footer">
