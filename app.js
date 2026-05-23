@@ -996,13 +996,10 @@ function renderTijdlijn(log) {
   if (!log || log.length === 0) { wrap.style.display = 'none'; return; }
   wrap.style.display = 'block';
   items.innerHTML = log.map(l => {
-    const chip = ACTIE_CHIPS.find(c => c.label === l.actie);
-    const emoji = l.emoji || (chip ? chip.emoji : '•');
     const isExtern = l.type === 'extern';
     return '<div class="tijdlijn-item' + (isExtern ? ' tijdlijn-extern' : '') + '">'
-      + '<span class="tijdlijn-emoji">' + emoji + '</span>'
-      + '<span class="tijdlijn-actie">' + (l.actie || '') + '</span>'
       + '<span class="tijdlijn-datum">' + (l.datum ? fmt(l.datum) : '—') + '</span>'
+      + '<span class="tijdlijn-actie">' + (l.actie || '') + '</span>'
       + '</div>';
   }).join('');
 }
