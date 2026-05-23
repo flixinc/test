@@ -915,3 +915,23 @@ textarea { resize: vertical; min-height: 56px; }
   .kal-project { padding: 2px 3px; }
   .kal-titel { font-size: 13px; min-width: 130px; }
 }
+
+.wis-actie-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+  margin-left: 6px;
+  flex-shrink: 0;
+  transition: color 0.15s, border-color 0.15s;
+}
+.wis-actie-btn:hover { color: #e74c3c; border-color: #e74c3c; }

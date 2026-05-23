@@ -952,18 +952,41 @@ async function logActie(label) {
   render();
 }
 
+
+async function wisActie() {
+  if (!editingId) return;
+  const idx = projecten.findIndex(x => x.id === editingId);
+  if (idx === -1) return;
+  const p = projecten[idx];
+  // Verwijder laatste log-entry als die overeenkomt met huidige laatste_actie
+  let log = Array.isArray(p.acties_log) ? [...p.acties_log] : [];
+  if (log.length > 0 && log[0].actie === p.laatste_actie) {
+    log = log.slice(1);
+  }
+  p.acties_log          = log;
+  p.laatste_actie       = log.length > 0 ? log[0].actie : null;
+  p.laatste_actie_datum = log.length > 0 ? log[0].datum : null;
+  projecten[idx] = p;
+  await slaOpInDb(p);
+  renderLaatsteActieChips(p.laatste_actie || '');
+  renderTijdlijn(p.acties_log);
+  render();
+}
 function renderLaatsteActieChips(huidig) {
   document.querySelectorAll('.laatste-actie-chip').forEach(c => {
     c.classList.toggle('actief', c.dataset.label === huidig);
   });
   const display = document.getElementById('laatste-actie-display');
+  const wisBtn  = document.getElementById('wis-actie-btn');
   if (!display) return;
   if (huidig) {
     const chip = ACTIE_CHIPS.find(c => c.label === huidig);
     display.textContent = (chip ? chip.emoji + ' ' : '') + huidig;
     display.style.display = 'inline-flex';
+    if (wisBtn) wisBtn.style.display = 'inline-flex';
   } else {
     display.style.display = 'none';
+    if (wisBtn) wisBtn.style.display = 'none';
   }
 }
 
