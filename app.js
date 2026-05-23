@@ -953,16 +953,13 @@ async function logActie(label) {
 }
 
 
-async function wisActie() {
+async function wisActieItem(logIndex) {
   if (!editingId) return;
   const idx = projecten.findIndex(x => x.id === editingId);
   if (idx === -1) return;
   const p = projecten[idx];
-  // Verwijder laatste log-entry als die overeenkomt met huidige laatste_actie
   let log = Array.isArray(p.acties_log) ? [...p.acties_log] : [];
-  if (log.length > 0 && log[0].actie === p.laatste_actie) {
-    log = log.slice(1);
-  }
+  log.splice(logIndex, 1);
   p.acties_log          = log;
   p.laatste_actie       = log.length > 0 ? log[0].actie : null;
   p.laatste_actie_datum = log.length > 0 ? log[0].datum : null;
@@ -976,18 +973,6 @@ function renderLaatsteActieChips(huidig) {
   document.querySelectorAll('.laatste-actie-chip').forEach(c => {
     c.classList.toggle('actief', c.dataset.label === huidig);
   });
-  const display = document.getElementById('laatste-actie-display');
-  const wisBtn  = document.getElementById('wis-actie-btn');
-  if (!display) return;
-  if (huidig) {
-    const chip = ACTIE_CHIPS.find(c => c.label === huidig);
-    display.textContent = huidig;
-    display.style.display = 'inline-flex';
-    if (wisBtn) wisBtn.style.display = 'inline-flex';
-  } else {
-    display.style.display = 'none';
-    if (wisBtn) wisBtn.style.display = 'none';
-  }
 }
 
 function renderTijdlijn(log) {
@@ -995,11 +980,12 @@ function renderTijdlijn(log) {
   const items = document.getElementById('actie-log-items');
   if (!log || log.length === 0) { wrap.style.display = 'none'; return; }
   wrap.style.display = 'block';
-  items.innerHTML = log.map(l => {
+  items.innerHTML = log.map((l, i) => {
     const isExtern = l.type === 'extern';
     return '<div class="tijdlijn-item' + (isExtern ? ' tijdlijn-extern' : '') + '">'
       + '<span class="tijdlijn-datum">' + (l.datum ? fmt(l.datum) : '—') + '</span>'
       + '<span class="tijdlijn-actie">' + (l.actie || '') + '</span>'
+      + '<button type="button" class="tijdlijn-wis" onclick="wisActieItem(' + i + ')" title="Verwijder">×</button>'
       + '</div>';
   }).join('');
 }

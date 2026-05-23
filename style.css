@@ -936,15 +936,19 @@ textarea { resize: vertical; min-height: 56px; }
   .kal-titel { font-size: 13px; min-width: 130px; }
 }
 
-.wis-actie-btn {
-  display: none;
-  align-items: center;
+
+
+.tijdlijn-wis {
   background: none;
   border: none;
-  padding: 6px 0 0 0;
-  font-size: 11px;
   color: var(--muted);
+  font-size: 14px;
+  line-height: 1;
   cursor: pointer;
-  gap: 4px;
+  padding: 0 0 0 4px;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+  flex-shrink: 0;
 }
-.wis-actie-btn:hover { color: #e74c3c; }
+.tijdlijn-item:hover .tijdlijn-wis { opacity: 1; }
+.tijdlijn-wis:hover { color: #e74c3c; }
