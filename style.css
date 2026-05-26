@@ -435,7 +435,9 @@ td { padding: 11px 14px; vertical-align: middle; }
 .s-lopend .status-dot { background: var(--green); box-shadow: 0 0 6px var(--green); }
 .s-wacht      { background: rgba(212,160,23,0.15); color: var(--yellow); }
 .s-wacht .status-dot { background: var(--yellow); }
-.s-klaar      { background: rgba(102,102,102,0.15); color: var(--muted); }
+.s-klaar        { background: rgba(102,102,102,0.15); color: var(--muted); }
+.s-controleren  { background: rgba(139,92,246,0.15); color: #8b5cf6; }
+.s-controleren .status-dot { background: #8b5cf6; }
 .s-klaar .status-dot { background: var(--muted); }
 
 /* ── Actie cel & chips ──────────────────────────────────── */

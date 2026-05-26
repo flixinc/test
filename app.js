@@ -16,7 +16,8 @@ const STATUS_LABELS = {
   wacht: 'Wacht op materiaal',
   'wacht-reactie': 'Wacht op reactie',
   'wacht-akkoord': 'Wacht op akkoord',
-  klaar: 'Klaar'
+  klaar:        'Klaar',
+  controleren:  'Controleren'
 };
 const STATUS_CLASS = {
   offerte: 's-offerte',
@@ -24,7 +25,8 @@ const STATUS_CLASS = {
   wacht: 's-wacht',
   'wacht-reactie': 's-wacht',
   'wacht-akkoord': 's-wacht',
-  klaar: 's-klaar'
+  klaar:        's-klaar',
+  controleren:  's-controleren'
 };
 const OPDRACHTGEVER_LOGOS = {};
 
@@ -416,7 +418,17 @@ function renderAandacht(lijst) {
   document.getElementById('aandacht-items').classList.toggle('collapsed', aandachtIngeklapt);
   document.getElementById('aandacht-toggle').textContent = aandachtIngeklapt ? '▼' : '▲';
   document.getElementById('aandacht-items').innerHTML = lijst.map(p => {
-    if (p._aandachtType === 'inactief') {
+    if (p._aandachtType === 'controleren') {
+      return '<div class="aandacht-card" style="border-left:3px solid #8b5cf6" onclick="openModal(' + p.id + ')">'
+        + '<div class="aandacht-header">'
+        + '<span class="aandacht-num">' + (p.nummer || '') + '</span>'
+        + '<span class="status-badge s-controleren"><span class="status-dot"></span>Controleren</span>'
+        + '</div>'
+        + '<div class="aandacht-adres">' + (p.adres || '') + '</div>'
+        + '<span class="aandacht-verstreken">Automatisch binnengemeld — controleer de velden</span>'
+        + '</div>';
+    }
+  if (p._aandachtType === 'inactief') {
       const chip = ACTIE_CHIPS.find(c => c.label === p.laatste_actie);
       const emoji = chip ? chip.emoji : '•';
       return '<div class="aandacht-card aandacht-card-inactief" onclick="openModal(' + p.id + ')">'
