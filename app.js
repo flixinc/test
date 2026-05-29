@@ -1,7 +1,21 @@
 /* ============================================================
    COMPIER Dashboard — App logica
-   v2.0 | 2026-05-14
-   Wijzigingen:
+   v2.4 | 2026-05-29
+   Wijzigingen v2.4:
+   - Agenda (.ics): iOS Safari fix. Op iOS wordt het event als data-URI
+     geopend i.p.v. Blob-download, zodat Safari "Toevoegen aan Agenda" toont
+     i.p.v. de "kan niet downloaden"-fout.
+   - Agenda: standaard herinnering (VALARM) toegevoegd. 1 uur ervoor bij een
+     tijdstip, 1 dag ervoor bij een hele dag. DTSTAMP/CALSCALE/METHOD toegevoegd.
+   - Bugfix agenda: eindtijd van een event met tijdstip werd in UTC berekend
+     terwijl de starttijd lokaal was. Nu beide lokale wandkloktijd.
+   - Agenda: ICS-tekst (SUMMARY/LOCATION/DESCRIPTION) wordt ge-escaped per
+     iCalendar-standaard (komma, puntkomma, backslash).
+   - Bugfix: "Aanvragen versturen"-toggle riep niet-bestaande functie aan
+     (toggleExternInhoud -> toggleExternView in index.html).
+   - Veiligheid: esc()-helper toegevoegd; alle data uit Supabase/AI/invoer wordt
+     nu HTML-ge-escaped in tabel, kaarten, aandacht, tijdlijn, deuren en locaties.
+   Eerdere wijzigingen (t/m v2.0):
    - Aandacht-sectie: wacht-projecten met verstreken datum automatisch bovenaan
    - Badge teller op Wacht-statistiek in header
    - created_at kolom toegevoegd in Supabase, projecten nieuwste eerst
@@ -29,6 +43,18 @@ const STATUS_CLASS = {
   controleren:  's-controleren'
 };
 const OPDRACHTGEVER_LOGOS = {};
+
+// HTML-escaping voor data uit Supabase / AI-uitlezer / invoervelden.
+// Voorkomt kapotte weergave en injectie bij tekens als < > & " '.
+function esc(v) {
+  if (v === null || v === undefined) return '';
+  return String(v)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 // ── State ─────────────────────────────────────────────────
 let projecten = [];
@@ -421,10 +447,10 @@ function renderAandacht(lijst) {
     if (p._aandachtType === 'controleren') {
       return '<div class="aandacht-card" style="border-left:3px solid #8b5cf6" onclick="openModal(' + p.id + ')">'
         + '<div class="aandacht-header">'
-        + '<span class="aandacht-num">' + (p.nummer || '') + '</span>'
+        + '<span class="aandacht-num">' + esc(p.nummer || '') + '</span>'
         + '<span class="status-badge s-controleren"><span class="status-dot"></span>Controleren</span>'
         + '</div>'
-        + '<div class="aandacht-adres">' + (p.adres || '') + '</div>'
+        + '<div class="aandacht-adres">' + esc(p.adres || '') + '</div>'
         + '<span class="aandacht-verstreken">Automatisch binnengemeld — controleer de velden</span>'
         + '</div>';
     }
@@ -433,12 +459,12 @@ function renderAandacht(lijst) {
       const emoji = chip ? chip.emoji : '•';
       return '<div class="aandacht-card aandacht-card-inactief" onclick="openModal(' + p.id + ')">'
         + '<div class="aandacht-card-top">'
-        + '<span class="proj-num" style="font-size:11px">' + p.nummer + '</span>'
+        + '<span class="proj-num" style="font-size:11px">' + esc(p.nummer) + '</span>'
         + '<span class="aandacht-verstreken">' + p._dagenInactief + ' dagen geen actie</span>'
         + '</div>'
         + '<div class="aandacht-card-body">'
-        + '<span class="aandacht-adres">' + p.adres + '</span>'
-        + '<span class="aandacht-actie">' + (p.laatste_actie || '') + ' → ' + (p.actie || '') + '</span>'
+        + '<span class="aandacht-adres">' + esc(p.adres) + '</span>'
+        + '<span class="aandacht-actie">' + esc(p.laatste_actie || '') + ' → ' + esc(p.actie || '') + '</span>'
         + '</div>'
         + '</div>';
     }
@@ -451,25 +477,25 @@ function renderAandacht(lijst) {
       const oudste = Math.max(...openstaand.map(a => Math.floor((Date.now() - new Date(a.datum_gevraagd)) / 86400000)));
       return `<div class="aandacht-card aandacht-card-extern" onclick="openModal(${p.id})">
         <div class="aandacht-card-top">
-          <span class="proj-num" style="font-size:11px">${p.nummer}</span>
-          <span class="status-badge s-offerte" style="font-size:10px"><span class="status-dot"></span>${STATUS_LABELS[p.status] || p.status}</span>
+          <span class="proj-num" style="font-size:11px">${esc(p.nummer)}</span>
+          <span class="status-badge s-offerte" style="font-size:10px"><span class="status-dot"></span>${esc(STATUS_LABELS[p.status] || p.status)}</span>
           <span class="aandacht-verstreken">${oudste} dagen geen respons</span>
         </div>
         <div class="aandacht-card-body">
-          <span class="aandacht-adres">${p.adres}</span>
-          <span class="aandacht-actie">↑ Wacht op: ${namen}</span>
+          <span class="aandacht-adres">${esc(p.adres)}</span>
+          <span class="aandacht-actie">↑ Wacht op: ${esc(namen)}</span>
         </div>
       </div>`;
     }
     return `<div class="aandacht-card" onclick="openModal(${p.id})">
       <div class="aandacht-card-top">
-        <span class="proj-num" style="font-size:11px">${p.nummer}</span>
-        <span class="status-badge s-wacht" style="font-size:10px"><span class="status-dot"></span>${STATUS_LABELS[p.status]}</span>
+        <span class="proj-num" style="font-size:11px">${esc(p.nummer)}</span>
+        <span class="status-badge s-wacht" style="font-size:10px"><span class="status-dot"></span>${esc(STATUS_LABELS[p.status])}</span>
         <span class="aandacht-verstreken">${dagenGeleden(p.datum)} verstreken</span>
       </div>
       <div class="aandacht-card-body">
-        <span class="aandacht-adres">${p.adres}</span>
-        ${p.actie ? '<span class="aandacht-actie">→ ' + p.actie + '</span>' : ''}
+        <span class="aandacht-adres">${esc(p.adres)}</span>
+        ${p.actie ? '<span class="aandacht-actie">→ ' + esc(p.actie) + '</span>' : ''}
       </div>
     </div>`;
   }).join('');
@@ -637,27 +663,27 @@ function render() {
     tbody.innerHTML = data.map(p => `
       <tr onclick="openModal(${p.id})" data-status="${p.status}">
         <td>
-          <div class="proj-num">${p.nummer}</div>
+          <div class="proj-num">${esc(p.nummer)}</div>
           ${p.schilder ? '<span class="schilder-badge">🖌 Schilder</span>' : ''}
         </td>
         <td>
-          <div class="proj-addr">${p.adres}</div>
-          ${p.notitie ? `<div class="proj-client">${p.notitie.substring(0,55)}${p.notitie.length>55?'…':''}</div>` : ''}
+          <div class="proj-addr">${esc(p.adres)}</div>
+          ${p.notitie ? `<div class="proj-client">${esc(p.notitie.substring(0,55))}${p.notitie.length>55?'…':''}</div>` : ''}
         </td>
-        <td><div class="proj-client">${p.ruimte || '—'}</div></td>
+        <td><div class="proj-client">${esc(p.ruimte) || '—'}</div></td>
         <td>
-          <div style="font-size:13px">${p.opdrachtgever}</div>
-          ${p.contact ? `<div class="proj-client">${p.contact.split('—')[0].trim()}</div>` : ''}
-          ${p.uitvoerder ? `<div class="proj-uitvoerder">🔧 ${p.uitvoerder}</div>` : ''}
+          <div style="font-size:13px">${esc(p.opdrachtgever)}</div>
+          ${p.contact ? `<div class="proj-client">${esc(p.contact.split('—')[0].trim())}</div>` : ''}
+          ${p.uitvoerder ? `<div class="proj-uitvoerder">🔧 ${esc(p.uitvoerder)}</div>` : ''}
         </td>
         <td>
-          ${p.laatste_actie ? `<div class="proj-laatste-actie">${p.laatste_actie}</div>` : '<div class="proj-client">—</div>'}
+          ${p.laatste_actie ? `<div class="proj-laatste-actie">${esc(p.laatste_actie)}</div>` : '<div class="proj-client">—</div>'}
           ${p.laatste_actie_datum ? `<div class="proj-client">${fmt(p.laatste_actie_datum)}</div>` : ''}
         </td>
         <td><span class="status-badge ${STATUS_CLASS[p.status]}"><span class="status-dot"></span>${STATUS_LABELS[p.status]}</span></td>
         <td>
           ${p.status === 'klaar' ? '' : `
-            <div class="actie-cell">${p.actie || '—'}</div>
+            <div class="actie-cell">${esc(p.actie) || '—'}</div>
             ${p.datum ? `<div class="actie-date ${dateClass(p.datum)}">${fmt(p.datum)}</div>` : ''}
           `}
         </td>
@@ -667,21 +693,21 @@ function render() {
   document.getElementById('cards').innerHTML = data.map(p => `
     <div class="card" onclick="openModal(${p.id})">
       <div class="card-top">
-        <span class="card-num">${p.nummer}</span>
+        <span class="card-num">${esc(p.nummer)}</span>
         <div style="display:flex;align-items:center;gap:6px">
           ${p.schilder ? '<span class="schilder-badge">🖌 Schilder</span>' : ''}
           <span class="status-badge ${STATUS_CLASS[p.status]}"><span class="status-dot"></span>${STATUS_LABELS[p.status]}</span>
         </div>
       </div>
-      <div class="card-addr">${p.adres}</div>
-      <div class="card-client">${p.opdrachtgever}${p.contact ? ' · ' + p.contact.split('—')[0].trim() : ''}</div>
-      ${p.uitvoerder ? '<div class="card-uitvoerder">🔧 ' + p.uitvoerder + '</div>' : ''}
-      ${p.laatste_actie ? '<div class="card-laatste-actie">' + p.laatste_actie + (p.laatste_actie_datum ? ' <span class="card-actie-datum">' + fmt(p.laatste_actie_datum) + '</span>' : '') + '</div>' : ''}
-      ${p.notitie ? `<div class="card-actie" style="color:var(--muted);font-size:12px;margin-bottom:6px">${p.notitie.substring(0,80)}…</div>` : ''}
-      ${p.status !== 'klaar' && p.actie ? `<div class="card-actie">${p.actie}</div>` : ''}
+      <div class="card-addr">${esc(p.adres)}</div>
+      <div class="card-client">${esc(p.opdrachtgever)}${p.contact ? ' · ' + esc(p.contact.split('—')[0].trim()) : ''}</div>
+      ${p.uitvoerder ? '<div class="card-uitvoerder">🔧 ' + esc(p.uitvoerder) + '</div>' : ''}
+      ${p.laatste_actie ? '<div class="card-laatste-actie">' + esc(p.laatste_actie) + (p.laatste_actie_datum ? ' <span class="card-actie-datum">' + fmt(p.laatste_actie_datum) + '</span>' : '') + '</div>' : ''}
+      ${p.notitie ? `<div class="card-actie" style="color:var(--muted);font-size:12px;margin-bottom:6px">${esc(p.notitie.substring(0,80))}…</div>` : ''}
+      ${p.status !== 'klaar' && p.actie ? `<div class="card-actie">${esc(p.actie)}</div>` : ''}
       ${(p.status !== 'klaar' && p.datum) || p.ruimte ? `<div class="card-footer">
         ${p.status !== 'klaar' && p.datum ? `<span class="card-date ${dateClass(p.datum)}">${fmt(p.datum)}</span>` : '<span></span>'}
-        ${p.ruimte ? `<span class="card-ruimte">${p.ruimte}</span>` : ''}
+        ${p.ruimte ? `<span class="card-ruimte">${esc(p.ruimte)}</span>` : ''}
       </div>` : ''}
     </div>`).join('') || '<div style="color:var(--muted);font-size:13px;padding:20px 0">Geen projecten gevonden.</div>';
 }
@@ -813,9 +839,9 @@ function renderDeuren(deuren) {
     const maat = d.breedte && d.hoogte ? `${d.breedte} × ${d.hoogte}` : '—';
     const ing  = d.status === 'ingemeten';
     return `<div class="deuren-item">
-      <span class="deuren-item-nr">${d.deur_nr}</span>
-      <span class="deuren-item-naam">${d.naam || 'Deur ' + d.deur_nr}</span>
-      <span class="deuren-item-maat">${maat}</span>
+      <span class="deuren-item-nr">${esc(d.deur_nr)}</span>
+      <span class="deuren-item-naam">${esc(d.naam || 'Deur ' + d.deur_nr)}</span>
+      <span class="deuren-item-maat">${esc(maat)}</span>
       <span class="deuren-item-status ${ing ? 'ds-ingemeten' : 'ds-open'}">${ing ? 'Ingemeten' : 'Open'}</span>
     </div>`;
   }).join('');
@@ -832,33 +858,56 @@ function agendaPunt() {
   if (!datum) { alert('Vul eerst een datum in.'); return; }
   const hasTime = datum.includes('T') && datum.length > 10;
   const titel = (nummer ? nummer + ' — ' : '') + actie;
-  const omschrijving = [adres, notitie].filter(Boolean).join('\n').replace(/\n/g, '\\n');
+  // iCalendar tekst-escaping: backslash, puntkomma, komma en newline
+  const icsEsc = (s) => String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+  const omschrijving = icsEsc([adres, notitie].filter(Boolean).join('\n'));
   const uid = Date.now() + '@compier';
   let dtStart, dtEnd;
   if (hasTime) {
-    dtStart = datum.slice(0,16).replace(/[-:T]/g, (c) => c === 'T' ? 'T' : '') + '00';
-    const endDate = new Date(datum); endDate.setHours(endDate.getHours() + 1);
-    dtEnd = endDate.toISOString().slice(0,16).replace(/[-:T]/g, (c) => c === 'T' ? 'T' : '') + '00';
+    // Lokale wandkloktijd voor zowel start als eind (geen UTC-conversie, anders loopt eind mis)
+    const pad = (n) => String(n).padStart(2, '0');
+    const fmtLocal = (d) => d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + 'T' + pad(d.getHours()) + pad(d.getMinutes()) + '00';
+    const start = new Date(datum);
+    const end   = new Date(start.getTime() + 60 * 60 * 1000);
+    dtStart = fmtLocal(start);
+    dtEnd   = fmtLocal(end);
   } else {
     dtStart = 'VALUE=DATE:' + datum.replace(/-/g,'');
     const nextDay = new Date(datum); nextDay.setDate(nextDay.getDate() + 1);
     dtEnd = 'VALUE=DATE:' + nextDay.toISOString().slice(0,10).replace(/-/g,'');
   }
+  // Herinnering: 1 uur ervoor bij tijdstip, 1 dag ervoor bij hele dag
+  const trigger = hasTime ? '-PT1H' : '-P1D';
   const ics = [
     'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Compier//Dashboard//NL',
+    'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
     'BEGIN:VEVENT', 'UID:' + uid,
+    'DTSTAMP:' + new Date().toISOString().replace(/[-:]/g,'').slice(0,15) + 'Z',
     hasTime ? 'DTSTART:' + dtStart : 'DTSTART;' + dtStart,
     hasTime ? 'DTEND:'   + dtEnd   : 'DTEND;'   + dtEnd,
-    'SUMMARY:' + titel,
+    'SUMMARY:' + icsEsc(titel),
     omschrijving ? 'DESCRIPTION:' + omschrijving : '',
-    adres ? 'LOCATION:' + adres : '',
+    adres ? 'LOCATION:' + icsEsc(adres) : '',
+    'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + icsEsc(titel),
+    'TRIGGER:' + trigger, 'END:VALARM',
     'END:VEVENT', 'END:VCALENDAR'
   ].filter(Boolean).join('\r\n');
-  const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href = url; a.download = (nummer || 'compier') + '.ics'; a.click();
-  URL.revokeObjectURL(url);
+
+  // iOS Safari ondersteunt geen Blob-download via a.download ("kan niet downloaden").
+  // Daarom op iOS het ICS-bestand als data-URI openen -> Safari biedt "Toevoegen aan Agenda".
+  const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (isIOS) {
+    const dataUri = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(ics);
+    window.location.href = dataUri;
+  } else {
+    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = (nummer || 'compier') + '.ics';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
   const btn = document.getElementById('btn-agenda');
   btn.textContent = '✓'; btn.classList.add('success');
   setTimeout(() => { btn.textContent = '📅'; btn.classList.remove('success'); }, 2000);
@@ -996,7 +1045,7 @@ function renderTijdlijn(log) {
     const isExtern = l.type === 'extern';
     return '<div class="tijdlijn-item' + (isExtern ? ' tijdlijn-extern' : '') + '">'
       + '<span class="tijdlijn-datum">' + (l.datum ? fmt(l.datum) : '—') + '</span>'
-      + '<span class="tijdlijn-actie">' + (l.actie || '') + '</span>'
+      + '<span class="tijdlijn-actie">' + esc(l.actie || '') + '</span>'
       + '<button type="button" class="tijdlijn-wis" onclick="wisActieItem(' + i + ')" title="Verwijder">×</button>'
       + '</div>';
   }).join('');
@@ -1173,20 +1222,20 @@ function addMarker(loc, lat, lng) {
   });
   const marker = L.marker([lat,lng], { icon }).addTo(locatieMap);
   const telLink = t => `tel:${t.replace(/[^\d+]/g,'')}`;
-  const telLine = loc.tel ? `<div class="popup-tel"><a href="${telLink(loc.tel)}">${loc.tel}</a></div>` : '';
-  const mobLine = loc.mob ? `<div class="popup-mob"><a href="${telLink(loc.mob)}">${loc.mob}</a></div>` : '';
+  const telLine = loc.tel ? `<div class="popup-tel"><a href="${telLink(loc.tel)}">${esc(loc.tel)}</a></div>` : '';
+  const mobLine = loc.mob ? `<div class="popup-mob"><a href="${telLink(loc.mob)}">${esc(loc.mob)}</a></div>` : '';
   const subs    = Array.isArray(loc.subgroepen) ? loc.subgroepen : [];
   const subHtml = subs.length ? `
     <div style="margin-top:8px;border-top:1px solid #333;padding-top:6px;">
       ${subs.map(s => `
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:3px;">
-          <span style="font-size:11px;color:#aaa;">${s.naam||'—'}</span>
-          ${s.mob ? `<a href="${telLink(s.mob)}" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#e87722;text-decoration:none;">${s.mob}</a>` : ''}
+          <span style="font-size:11px;color:#aaa;">${esc(s.naam||'—')}</span>
+          ${s.mob ? `<a href="${telLink(s.mob)}" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#e87722;text-decoration:none;">${esc(s.mob)}</a>` : ''}
         </div>`).join('')}
     </div>` : '';
   marker.bindPopup(`
-    <div class="popup-naam">${loc.naam}</div>
-    <div class="popup-adres">${loc.adres||''}, ${loc.postcode||''} ${loc.plaats||''}</div>
+    <div class="popup-naam">${esc(loc.naam)}</div>
+    <div class="popup-adres">${esc(loc.adres||'')}, ${esc(loc.postcode||'')} ${esc(loc.plaats||'')}</div>
     ${telLine}${mobLine}${subHtml}
   `, { maxWidth: 260 });
   marker.on('click', () => selectLocatie(loc.id, false));
@@ -1253,7 +1302,7 @@ function renderLocatieLijst() {
   const telTxt = loc => {
     const nr = loc.mob || loc.tel;
     if (!nr) return '—';
-    return `<a href="tel:${nr.replace(/[^\d+]/g,'')}" style="color:var(--orange);text-decoration:none;">${nr}</a>`;
+    return `<a href="tel:${nr.replace(/[^\d+]/g,'')}" style="color:var(--orange);text-decoration:none;">${esc(nr)}</a>`;
   };
   const subTxt = loc => {
     const subs = Array.isArray(loc.subgroepen) ? loc.subgroepen : [];
@@ -1262,9 +1311,9 @@ function renderLocatieLijst() {
   };
   const items = gefilterd.map(loc => `
     <div class="loc-item${selectedLocId===loc.id?' selected':''}" onclick="selectLocatie(${loc.id},true)" id="loc-item-${loc.id}">
-      <div><span class="loc-type-tag ${loc.type}">${loc.type}</span></div>
-      <div class="loc-item-naam">${loc.naam}</div>
-      <div class="loc-item-adres">${loc.adres||''}, ${loc.postcode||''} ${loc.plaats||''}</div>
+      <div><span class="loc-type-tag ${esc(loc.type)}">${esc(loc.type)}</span></div>
+      <div class="loc-item-naam">${esc(loc.naam)}</div>
+      <div class="loc-item-adres">${esc(loc.adres||'')}, ${esc(loc.postcode||'')} ${esc(loc.plaats||'')}</div>
       <div class="loc-item-tel">${telTxt(loc)}${subTxt(loc)}</div>
     </div>`).join('');
   const listEl = document.getElementById('loc-list');
@@ -1831,7 +1880,7 @@ function deelKaart() {
   if (win) {
     win.document.write(`<!DOCTYPE html><html><head>
       <meta name="viewport" content="width=device-width,initial-scale=1">
-      <title>${p.nummer}</title>
+      <title>${esc(p.nummer)}</title>
       <style>
         * { box-sizing:border-box; margin:0; padding:0; }
         body { background:${bgPagina}; display:flex; flex-direction:column;
@@ -1851,7 +1900,7 @@ function deelKaart() {
         }
         .terug:hover { border-color:#E8611A; color:#E8611A; }
       </style></head><body>
-      <img src="${imgUrl}" alt="${p.nummer}">
+      <img src="${imgUrl}" alt="${esc(p.nummer)}">
       <p class="hint">Houd de afbeelding ingedrukt om op te slaan of te delen</p>
       <a class="terug" onclick="window.close()" href="#">← Terug naar dashboard</a>
     </body></html>`);
