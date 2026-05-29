@@ -1087,7 +1087,12 @@ async function saveProject() {
     projecten[idx] = { ...bestaand, ...p };
     await slaOpInDb(projecten[idx]);
   } else {
-    const nieuw = { id: nextId++, ...p, acties_log: [] };
+    // Nieuw project: "Bon/opdracht binnen" automatisch als eerste tijdlijn-actie + datum vandaag
+    const vandaag = new Date().toISOString().slice(0, 10);
+    const binnenChip = ACTIE_CHIPS.find(c => c.label === 'Bon/opdracht binnen');
+    const startLog = [{ actie: 'Bon/opdracht binnen', datum: vandaag, type: binnenChip ? binnenChip.type : 'intern', emoji: binnenChip ? binnenChip.emoji : '📥' }];
+    if (!p.laatste_actie) { p.laatste_actie = 'Bon/opdracht binnen'; p.laatste_actie_datum = vandaag; }
+    const nieuw = { id: nextId++, ...p, acties_log: startLog };
     projecten.push(nieuw);
     await slaOpInDb(nieuw);
   }
