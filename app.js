@@ -344,18 +344,43 @@ ${tekst.substring(0, 4000)}`
 }
 
 // ── Filter & render helpers ───────────────────────────────
+// Aandacht nodig — bepaalt welke projecten opvallen. Volgorde = weergavevolgorde.
+const AANDACHT_STIL_DAGEN = 10; // dagen zonder activiteit voor "te lang stil"
 function getAandacht() {
   const today = new Date(); today.setHours(0,0,0,0);
   const result = [];
   const idsInLijst = new Set();
-  // Wacht-projecten met verstreken actiedatum
+  const voegToe = (p, extra) => { result.push({ ...p, ...extra }); idsInLijst.add(p.id); };
+
+  // 1. Nieuw binnen: status 'controleren' — moet nagekeken worden (bovenaan)
   projecten.forEach(p => {
-    if (p.status?.startsWith('wacht') && p.datum && new Date(p.datum) < today) {
-      result.push({ ...p, _aandachtType: 'wacht' });
-      idsInLijst.add(p.id);
+    if (idsInLijst.has(p.id)) return;
+    if (p.status === 'controleren') voegToe(p, { _aandachtType: 'controleren' });
+  });
+
+  // 2. Wacht verstreken: wacht-status met geplande datum in het verleden
+  projecten.forEach(p => {
+    if (idsInLijst.has(p.id)) return;
+    if (p.status && p.status.startsWith('wacht') && p.datum && new Date(p.datum) < today) {
+      voegToe(p, { _aandachtType: 'wacht' });
     }
   });
-  // Extern aanvragen >= 14 dagen zonder ontvangst
+
+  // 3. Te lang stil: actief project (niet klaar) dat AANDACHT_STIL_DAGEN dagen niet is
+  //    bijgewerkt. Gemeten op 'updated_at' (door de database automatisch bijgewerkt bij
+  //    elke opslag/wijziging/actie). Zo tellen ALLE open projecten betrouwbaar mee.
+  projecten.forEach(p => {
+    if (idsInLijst.has(p.id)) return;
+    if (p.status === 'klaar') return;
+    const ref = p.updated_at || p.created_at;
+    if (!ref) return;
+    const dagen = Math.floor((Date.now() - new Date(ref)) / 86400000);
+    if (dagen >= AANDACHT_STIL_DAGEN) {
+      voegToe(p, { _aandachtType: 'stil', _dagenStil: dagen });
+    }
+  });
+
+  // 4. Extern te lang open: externe aanvragen >= 14 dagen zonder reactie
   projecten.forEach(p => {
     if (idsInLijst.has(p.id)) return;
     const aanvragen = Array.isArray(p.extern_aanvragen) ? p.extern_aanvragen : [];
@@ -363,21 +388,9 @@ function getAandacht() {
       if (!a.datum_gevraagd || a.ontvangen) return false;
       return Math.floor((Date.now() - new Date(a.datum_gevraagd)) / 86400000) >= 14;
     });
-    if (openstaand.length > 0) result.push({ ...p, _aandachtType: 'extern', _openstaand: openstaand });
+    if (openstaand.length > 0) voegToe(p, { _aandachtType: 'extern', _openstaand: openstaand });
   });
-  // Inactiviteit: laatste_actie_datum > 7d (intern) of 14d (extern), volgende actie open
-  projecten.forEach(p => {
-    if (idsInLijst.has(p.id)) return;
-    if (!p.laatste_actie_datum || !p.actie) return;
-    if (p.status === 'klaar') return;
-    const chip = ACTIE_CHIPS.find(c => c.label === p.laatste_actie);
-    const drempel = (chip && chip.type === 'extern') ? 14 : 7;
-    const dagen = Math.floor((Date.now() - new Date(p.laatste_actie_datum)) / 86400000);
-    if (dagen >= drempel) {
-      result.push({ ...p, _aandachtType: 'inactief', _dagenInactief: dagen, _drempel: drempel });
-      idsInLijst.add(p.id);
-    }
-  });
+
   return result;
 }
 
@@ -454,17 +467,19 @@ function renderAandacht(lijst) {
         + '<span class="aandacht-verstreken">Automatisch binnengemeld — controleer de velden</span>'
         + '</div>';
     }
-  if (p._aandachtType === 'inactief') {
-      const chip = ACTIE_CHIPS.find(c => c.label === p.laatste_actie);
-      const emoji = chip ? chip.emoji : '•';
+  if (p._aandachtType === 'stil') {
+      const label = p._dagenStil + ' dagen niet bijgewerkt';
+      const onder = p.laatste_actie || p.actie
+        ? esc(p.laatste_actie || '—') + ' → ' + esc(p.actie || '—')
+        : '<span style="opacity:.7">Nog geen actie of vervolgstap ingevuld</span>';
       return '<div class="aandacht-card aandacht-card-inactief" onclick="openModal(' + p.id + ')">'
         + '<div class="aandacht-card-top">'
         + '<span class="proj-num" style="font-size:11px">' + esc(p.nummer) + '</span>'
-        + '<span class="aandacht-verstreken">' + p._dagenInactief + ' dagen geen actie</span>'
+        + '<span class="aandacht-verstreken">' + label + '</span>'
         + '</div>'
         + '<div class="aandacht-card-body">'
         + '<span class="aandacht-adres">' + esc(p.adres) + '</span>'
-        + '<span class="aandacht-actie">' + esc(p.laatste_actie || '') + ' → ' + esc(p.actie || '') + '</span>'
+        + '<span class="aandacht-actie">' + onder + '</span>'
         + '</div>'
         + '</div>';
     }
