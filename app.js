@@ -910,11 +910,16 @@ function agendaPunt() {
 
   // iOS Safari ondersteunt geen Blob-download via a.download ("kan niet downloaden").
   // Daarom op iOS het ICS-bestand als data-URI openen -> Safari biedt "Toevoegen aan Agenda".
+  // Let op: recente WebKit-versies blokkeren een data:-navigatie stil wanneer die via
+  // location.href wordt gezet (geen fout, maar er gebeurt niks) — een geklikt <a>-element
+  // werkt wel betrouwbaar, dus die gebruiken we ook hier i.p.v. window.location.href.
   const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   if (isIOS) {
     const dataUri = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(ics);
-    window.location.href = dataUri;
+    const a = document.createElement('a');
+    a.href = dataUri; a.rel = 'noopener';
+    document.body.appendChild(a); a.click(); a.remove();
   } else {
     const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
     const url  = URL.createObjectURL(blob);
