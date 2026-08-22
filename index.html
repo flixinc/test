@@ -205,6 +205,13 @@
         <input type="text" id="nieuwe-oa-input" class="oa-input" placeholder="Naam…" onkeydown="if(event.key==='Enter')voegOnderaannemerToe()">
         <button class="oa-add-btn" onclick="voegOnderaannemerToe()">+</button>
       </div>
+      <div class="oa-divider"></div>
+      <div class="accent-panel-label" style="margin-top:10px;margin-bottom:6px">Medewerkers</div>
+      <div class="oa-beheer-lijst" id="medewerkers-beheer-lijst"></div>
+      <div class="oa-toevoegen-wrap">
+        <input type="text" id="nieuwe-mw-input" class="oa-input" placeholder="Naam…" onkeydown="if(event.key==='Enter')voegMedewerkerToe()">
+        <button class="oa-add-btn" onclick="voegMedewerkerToe()">+</button>
+      </div>
     </div>
   </div>
   <button onclick="forceerVervers(event)" title="Ververs app" style="background:none;border:none;cursor:pointer;padding:0 6px;color:var(--muted);font-size:17px;line-height:1;transition:color 0.15s;" onmouseenter="this.style.color='var(--orange)'" onmouseleave="this.style.color='var(--muted)'">↺</button>
@@ -409,6 +416,14 @@
       <div class="deuren-lijst" id="deuren-lijst">
         <div class="deuren-loading">Laden…</div>
       </div>
+    </div>
+
+    <!-- Medewerkers sectie (alleen bij bestaand project) -->
+    <div class="uitvragen-sectie" id="medewerkers-sectie" style="display:none">
+      <div class="uitvragen-header">
+        <div class="uitvragen-label">Medewerkers gekoppeld</div>
+      </div>
+      <div class="actie-chips" id="medewerkers-chips" style="margin-top:0"></div>
     </div>
 
     <!-- Uitvragen sectie (alleen bij bestaand project) -->

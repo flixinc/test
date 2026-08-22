@@ -37,6 +37,8 @@ let editingId = null;
 let sortKey = 'datum';
 let sortDir = 1;
 let onderaannemers = [];
+let medewerkers = [];
+let projectMedewerkerIds = [];
 let apiKey = localStorage.getItem('compier_api_key') || '';
 let sbUrl  = localStorage.getItem('compier_sb_url') || '';
 let sbKey  = localStorage.getItem('compier_sb_key') || '';
@@ -155,6 +157,7 @@ function toonApp() {
   initApiKey();
   laadProjecten();
   laadOnderaannemers();
+  laadMedewerkers();
 }
 
 // ── Supabase helpers ──────────────────────────────────────
@@ -485,6 +488,97 @@ async function verwijderOnderaannemer(id) {
   } catch(e) { alert('Verwijderen mislukt: ' + e.message); }
 }
 
+// ── Medewerkers ────────────────────────────────────────────
+async function laadMedewerkers() {
+  if (!sbUrl || !sbKey) return;
+  try {
+    const data = await sbFetch('medewerkers?order=naam.asc');
+    medewerkers = Array.isArray(data) ? data : [];
+  } catch(e) {
+    console.warn('Medewerkers laden mislukt:', e.message);
+  }
+  renderMedewerkersBeheer();
+}
+
+function renderMedewerkersBeheer() {
+  const lijst = document.getElementById('medewerkers-beheer-lijst');
+  if (!lijst) return;
+  if (!medewerkers.length) {
+    lijst.innerHTML = '<div class="oa-leeg">Nog geen medewerkers.</div>';
+    return;
+  }
+  lijst.innerHTML = medewerkers.map(m =>
+    `<div class="oa-item">
+      <span class="oa-naam">${m.naam}</span>
+      <button class="oa-del" onclick="verwijderMedewerker('${m.id}')" title="Verwijderen">✕</button>
+    </div>`
+  ).join('');
+}
+
+async function voegMedewerkerToe() {
+  const input = document.getElementById('nieuwe-mw-input');
+  const naam = (input?.value || '').trim();
+  if (!naam) return;
+  try {
+    const result = await sbFetch('medewerkers', 'POST', { naam });
+    const nieuw = Array.isArray(result) && result[0] ? result[0] : { id: crypto.randomUUID(), naam };
+    medewerkers.push(nieuw);
+    medewerkers.sort((a, b) => a.naam.localeCompare(b.naam));
+    if (input) input.value = '';
+    renderMedewerkersBeheer();
+    if (editingId) renderMedewerkersSectie();
+  } catch(e) { alert('Toevoegen mislukt: ' + e.message); }
+}
+
+async function verwijderMedewerker(id) {
+  if (!confirm('Medewerker verwijderen?')) return;
+  try {
+    await sbFetch('medewerkers?id=eq.' + id, 'DELETE');
+    medewerkers = medewerkers.filter(m => m.id !== id);
+    renderMedewerkersBeheer();
+    if (editingId) renderMedewerkersSectie();
+  } catch(e) { alert('Verwijderen mislukt: ' + e.message); }
+}
+
+// ── Medewerkers koppelen aan project ────────────────────────
+async function laadProjectMedewerkers(projectId) {
+  try {
+    const data = await sbFetch('project_medewerkers?project_id=eq.' + projectId + '&select=medewerker_id');
+    projectMedewerkerIds = Array.isArray(data) ? data.map(r => r.medewerker_id) : [];
+  } catch(e) {
+    console.warn('Projectmedewerkers laden mislukt:', e.message);
+    projectMedewerkerIds = [];
+  }
+  renderMedewerkersSectie();
+}
+
+function renderMedewerkersSectie() {
+  const wrap = document.getElementById('medewerkers-chips');
+  if (!wrap) return;
+  if (!medewerkers.length) {
+    wrap.innerHTML = '<div class="oa-leeg">Voeg eerst medewerkers toe via het kleurenmenu (●).</div>';
+    return;
+  }
+  wrap.innerHTML = medewerkers.map(m =>
+    `<button type="button" class="actie-chip${projectMedewerkerIds.includes(m.id) ? ' selected' : ''}" onclick="toggleMedewerker('${m.id}')">${m.naam}</button>`
+  ).join('');
+}
+
+async function toggleMedewerker(medewerkerId) {
+  if (!editingId) return;
+  const gekoppeld = projectMedewerkerIds.includes(medewerkerId);
+  try {
+    if (gekoppeld) {
+      await sbFetch(`project_medewerkers?project_id=eq.${editingId}&medewerker_id=eq.${medewerkerId}`, 'DELETE');
+      projectMedewerkerIds = projectMedewerkerIds.filter(id => id !== medewerkerId);
+    } else {
+      await sbFetch('project_medewerkers', 'POST', { project_id: editingId, medewerker_id: medewerkerId });
+      projectMedewerkerIds.push(medewerkerId);
+    }
+    renderMedewerkersSectie();
+  } catch(e) { alert('Koppelen mislukt: ' + e.message); }
+}
+
 // ── Uitvragen sectie ──────────────────────────────────────
 function toggleExternView(checked) {
   document.getElementById('extern-inhoud').style.display = checked ? 'block' : 'none';
@@ -699,6 +793,8 @@ function openModal(id) {
     laadDeuren(p.nummer);
     document.getElementById('uitvragen-sectie').style.display = 'block';
     renderUitvragenSectie();
+    document.getElementById('medewerkers-sectie').style.display = 'block';
+    laadProjectMedewerkers(p.id);
   } else {
     ['f-nummer','f-adres','f-ruimte','f-opdrachtgever','f-actie','f-contact','f-aanmelder','f-notitie'].forEach(i => document.getElementById(i).value = '');
     document.getElementById('f-status').value = 'lopend';
@@ -710,6 +806,7 @@ function openModal(id) {
     toonLogo('');
     document.getElementById('deuren-sectie').style.display = 'none';
     document.getElementById('uitvragen-sectie').style.display = 'none';
+    document.getElementById('medewerkers-sectie').style.display = 'none';
   }
   document.getElementById('modal').classList.add('open');
 }
@@ -717,6 +814,7 @@ function openModal(id) {
 function closeModal() {
   document.getElementById('modal').classList.remove('open');
   editingId = null;
+  projectMedewerkerIds = [];
 }
 
 document.getElementById('modal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
