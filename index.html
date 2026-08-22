@@ -223,7 +223,7 @@
   <div id="aandacht-wrap" style="display:none">
     <div class="aandacht-header">
       <span class="aandacht-titel">⚠ Aandacht nodig</span>
-      <span class="aandacht-sub">Wacht-projecten met verstreken actiedatum — <span id="aandacht-count">0</span> project(en)</span>
+      <span class="aandacht-sub">Nieuw te controleren, te lang stil of verstreken — <span id="aandacht-count">0</span> project(en)</span>
       <button class="wr-close" id="aandacht-toggle" onclick="toggleAandacht()" title="Minimaliseer / uitklappen" style="margin-left:auto;font-size:13px;padding:0 4px;">▲</button>
     </div>
     <div class="aandacht-items" id="aandacht-items"></div>
@@ -239,7 +239,8 @@
       <button class="filter-btn" data-filter="lopend">Lopend</button>
       <button class="filter-btn" data-filter="wacht">Wacht</button>
       <button class="filter-btn" data-filter="klaar">Klaar</button>
-      <button class="filter-btn" data-filter="schilder">🖌 Schilder</button>
+      <button class="filter-btn" data-filter="schilder">Schilder</button>
+      <button class="filter-btn" data-filter="controleren">Controleren</button>
     </div>
     <button class="btn-add" onclick="openModal()">+ Nieuw</button>
   </div>
@@ -253,6 +254,7 @@
             <th onclick="sortBy('adres')">Adres</th>
             <th onclick="sortBy('ruimte')">Ruimte</th>
             <th onclick="sortBy('opdrachtgever')">Opdrachtgever</th>
+            <th onclick="sortBy('laatste_actie_datum')">Laatste actie</th>
             <th onclick="sortBy('status')">Status</th>
             <th onclick="sortBy('actie')">Volgende actie</th>
             <th onclick="sortBy('created_at')" title="Sorteer op aanmaakdatum" style="white-space:nowrap">Toegevoegd</th>
@@ -325,6 +327,11 @@
 
     <!-- Formuliervelden -->
     <div class="form-grid">
+
+      <div class="modal-section">
+        <span class="modal-section-label">Project</span>
+        <span class="modal-section-line"></span>
+      </div>
       <div class="form-group">
         <label>Kenmerk / nummer</label>
         <input type="text" id="f-nummer" placeholder="bijv. M2603 0024">
@@ -338,15 +345,27 @@
           <option value="wacht-reactie">Wacht op reactie</option>
           <option value="wacht-akkoord">Wacht op akkoord</option>
           <option value="klaar">Klaar</option>
+          <option value="controleren">Controleren</option>
         </select>
       </div>
       <div class="schilder-toggle-row">
         <label>Type</label>
-        <label class="schilder-switch">
+        <label class="theme-switch" style="cursor:pointer">
           <input type="checkbox" id="f-schilder">
-          <span class="schilder-track"><span class="schilder-thumb"></span></span>
-          <span class="schilder-switch-label">Schilderopdracht</span>
+          <span class="theme-track"><span class="theme-thumb"></span></span>
+          <span style="font-size:13px;color:var(--muted);margin-left:8px">Schilderopdracht</span>
         </label>
+      </div>
+      <div class="form-group full">
+        <label>Uitvoerende partij</label>
+        <select id="f-uitvoerder">
+          <option value="">— Geen onderaannemer —</option>
+        </select>
+      </div>
+
+      <div class="modal-section">
+        <span class="modal-section-label">Locatie & contacten</span>
+        <span class="modal-section-line"></span>
       </div>
       <div class="form-group full">
         <label>Adres werklocatie</label>
@@ -368,29 +387,43 @@
         <label>Aanmelder op locatie</label>
         <input type="text" id="f-aanmelder" placeholder="bijv. P. de Vries — 06 87654321">
       </div>
+
+      <div class="modal-section">
+        <span class="modal-section-label">Werkzaamheden</span>
+        <span class="modal-section-line"></span>
+      </div>
       <div class="form-group full">
         <label>Omschrijving werkzaamheden</label>
         <textarea id="f-notitie" placeholder="Wat moet er gedaan worden?"></textarea>
       </div>
-      <div class="form-group full" id="actie-sectie">
-        <label>Volgende actie</label>
-        <input type="text" id="f-actie" placeholder="Kies hieronder of typ zelf…">
-        <div class="actie-chips" id="actie-chips">
-          <div class="chips-label">Doen</div>
-          <button type="button" class="actie-chip" onclick="kiesActie('Inmeten')">Inmeten</button>
-          <button type="button" class="actie-chip" onclick="kiesActie('Inplannen')">Inplannen</button>
-          <button type="button" class="actie-chip" onclick="kiesActie('Montage')">Montage</button>
-          <button type="button" class="actie-chip" onclick="kiesActie('Materialen bestellen')">Materialen bestellen</button>
-          <button type="button" class="actie-chip" onclick="kiesActie('Offerte maken')">Offerte maken</button>
-          <button type="button" class="actie-chip" onclick="kiesActie('Offerte versturen')">Offerte versturen</button>
-          <button type="button" class="actie-chip" onclick="kiesActie('Terugbellen')">Terugbellen</button>
-          <button type="button" class="actie-chip" onclick="kiesActie('Oplevering plannen')">Oplevering plannen</button>
-          <button type="button" class="actie-chip" onclick="kiesActie('Gereed melden')">Gereed melden</button>
-          <div class="chips-label" style="margin-top:4px">Wachten</div>
-          <button type="button" class="actie-chip chip-wacht" onclick="kiesActie('Wachten op reactie')">Wachten op reactie</button>
-          <button type="button" class="actie-chip chip-wacht" onclick="kiesActie('Wachten op akkoord')">Wachten op akkoord</button>
-          <button type="button" class="actie-chip chip-wacht" onclick="kiesActie('Wachten op materiaal')">Wachten op materiaal</button>
+
+      <div class="modal-section">
+        <span class="modal-section-label">Actie & planning</span>
+        <span class="modal-section-line"></span>
+      </div>
+      <!-- Laatste actie -->
+      <div class="laatste-actie-sectie form-group full" id="actie-sectie">
+        <label>Laatste actie <span class="la-hint">— tik aan wat je net gedaan hebt</span></label>
+        
+        <div class="laatste-actie-chips">
+          <button type="button" class="laatste-actie-chip" data-label="Bon/opdracht binnen"  onclick="logActie('Bon/opdracht binnen')">Bon/opdracht binnen</button>
+          <button type="button" class="laatste-actie-chip" data-label="Inmeten op locatie"   onclick="logActie('Inmeten op locatie')">Inmeten op locatie</button>
+          <button type="button" class="laatste-actie-chip chip-extern" data-label="Extern opvragen" onclick="logActie('Extern opvragen')">Extern opvragen</button>
+          <button type="button" class="laatste-actie-chip" data-label="Offerte opstellen"    onclick="logActie('Offerte opstellen')">Offerte opstellen</button>
+          <button type="button" class="laatste-actie-chip" data-label="Offerte verstuurd"    onclick="logActie('Offerte verstuurd')">Offerte verstuurd</button>
+          <button type="button" class="laatste-actie-chip" data-label="Akkoord ontvangen"    onclick="logActie('Akkoord ontvangen')">Akkoord ontvangen</button>
+          <button type="button" class="laatste-actie-chip" data-label="Materialen bestellen" onclick="logActie('Materialen bestellen')">Materialen bestellen</button>
+          <button type="button" class="laatste-actie-chip" data-label="Inplannen"            onclick="logActie('Inplannen')">Inplannen</button>
+          <button type="button" class="laatste-actie-chip" data-label="Opdracht gegeven"     onclick="logActie('Opdracht gegeven')">Opdracht gegeven</button>
+          <button type="button" class="laatste-actie-chip" data-label="Statusupdate gegeven" onclick="logActie('Statusupdate gegeven')">Statusupdate gegeven</button>
+          <button type="button" class="laatste-actie-chip" data-label="Opgeleverd"           onclick="logActie('Opgeleverd')">Opgeleverd</button>
+          <button type="button" class="laatste-actie-chip" data-label="Afgemeld"             onclick="logActie('Afgemeld')">Afgemeld</button>
         </div>
+      </div>
+      <!-- Volgende actie -->
+      <div class="form-group full">
+        <label>Volgende actie</label>
+        <input type="text" id="f-actie" placeholder="Wat moet er als volgende gebeuren…">
       </div>
       <div class="form-group" id="datum-sectie">
         <label>Datum &amp; tijd</label>
@@ -398,9 +431,9 @@
       </div>
     </div>
 
-    <!-- Actie log -->
+    <!-- Tijdlijn -->
     <div class="actie-log" id="actie-log" style="display:none">
-      <div class="actie-log-titel">Vorige acties</div>
+      <div class="actie-log-titel">Tijdlijn</div>
       <div id="actie-log-items"></div>
     </div>
 
@@ -431,7 +464,7 @@
       <div class="uitvragen-header">
         <div class="uitvragen-label">Extern uitvragen</div>
         <label class="extern-toggle-wrap">
-          <input type="checkbox" id="extern-toggle" onchange="toggleExternInhoud(this.checked)">
+          <input type="checkbox" id="extern-toggle" onchange="toggleExternView(this.checked)">
           <span class="extern-toggle-switch"></span>
           <span class="extern-toggle-text">Aanvragen versturen</span>
         </label>
@@ -447,7 +480,7 @@
       <button class="btn-delete" id="btn-delete" onclick="deleteProject()" style="display:none">Verwijderen</button>
       <button class="btn-cancel" onclick="closeModal()">Annuleren</button>
       <button class="btn-deel" id="btn-deel" onclick="deelKaart()" title="Deel als afbeelding" style="display:none">Deel</button>
-      <button class="btn-agenda" id="btn-agenda" onclick="agendaPunt()" title="Maak agendapunt in Google Calendar">📅</button>
+      <button class="btn-agenda" id="btn-agenda" onclick="agendaPunt()" title="Maak agendapunt (.ics) voor je agenda">📅</button>
       <button class="btn-save" onclick="saveProject()">OPSLAAN</button>
     </div>
   </div>

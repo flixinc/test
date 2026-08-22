@@ -376,6 +376,13 @@ header {
 .card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .card-num { font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 600; color: var(--orange); }
 .card-addr { font-size: 14px; font-weight: 500; margin-bottom: 3px; }
+.card-uitvoerder {
+  font-size: 11px; color: var(--orange); font-weight: 500;
+  margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.proj-uitvoerder {
+  font-size: 11px; color: var(--orange); font-weight: 500; margin-top: 2px;
+}
 .card-client { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
 .card-actie { font-size: 13px; color: var(--text); }
 .card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; }
@@ -408,8 +415,8 @@ th {
 }
 th:hover { color: var(--orange); }
 tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; cursor: pointer; }
-tbody tr:last-child { border-bottom: none; }
 tbody tr:hover { background: var(--surface2); box-shadow: inset 3px 0 0 var(--orange); }
+tbody tr:last-child { border-bottom: none; }
 td { padding: 11px 14px; vertical-align: middle; }
 .proj-num { font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 600; color: var(--orange); }
 .proj-addr { font-size: 14px; color: var(--text); font-weight: 500; }
@@ -417,9 +424,9 @@ td { padding: 11px 14px; vertical-align: middle; }
 
 /* ── Status badges ──────────────────────────────────────── */
 .status-badge {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 3px 8px; border-radius: 3px;
-  font-size: 11px; font-weight: 500; letter-spacing: 0.03em; white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 4px;
+  font-size: 12px; font-weight: 500; letter-spacing: 0.02em; white-space: nowrap;
 }
 .status-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 .s-offerte    { background: rgba(74,144,217,0.15); color: var(--blue); }
@@ -428,7 +435,9 @@ td { padding: 11px 14px; vertical-align: middle; }
 .s-lopend .status-dot { background: var(--green); box-shadow: 0 0 6px var(--green); }
 .s-wacht      { background: rgba(212,160,23,0.15); color: var(--yellow); }
 .s-wacht .status-dot { background: var(--yellow); }
-.s-klaar      { background: rgba(102,102,102,0.15); color: var(--muted); }
+.s-klaar        { background: rgba(102,102,102,0.15); color: var(--muted); }
+.s-controleren  { background: rgba(139,92,246,0.15); color: #8b5cf6; }
+.s-controleren .status-dot { background: #8b5cf6; }
 .s-klaar .status-dot { background: var(--muted); }
 
 /* ── Actie cel & chips ──────────────────────────────────── */
@@ -463,6 +472,72 @@ td { padding: 11px 14px; vertical-align: middle; }
 .actie-log-item:last-child { border-bottom: none; }
 .actie-log-datum { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); white-space: nowrap; min-width: 60px; }
 .actie-log-tekst { flex: 1; }
+
+/* ── Laatste actie chips ─────────────────────────────────── */
+.laatste-actie-sectie label { margin-bottom: 4px; }
+.la-hint { font-size: 10px; color: var(--muted); text-transform: none; letter-spacing: 0; font-weight: 400; }
+.laatste-actie-display {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(var(--orange-rgb),.12); border: 1px solid var(--orange);
+  color: var(--orange); border-radius: 4px; padding: 4px 10px;
+  font-size: 12px; font-weight: 600; margin-bottom: 8px;
+}
+.laatste-actie-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.laatste-actie-chip {
+  background: var(--surface2); border: 1px solid var(--border); color: var(--muted);
+  border-radius: 20px; padding: 5px 12px; cursor: pointer; font-size: 12px;
+  font-family: 'IBM Plex Sans', sans-serif; transition: all .15s; white-space: nowrap;
+}
+.laatste-actie-chip:hover { border-color: var(--orange); color: var(--orange); background: rgba(var(--orange-rgb),0.07); }
+.laatste-actie-chip.actief { border-color: var(--orange); color: var(--orange); background: rgba(var(--orange-rgb),0.15); font-weight: 600; }
+.laatste-actie-chip.chip-extern { border-color: #4a90d9; color: #4a90d9; }
+.laatste-actie-chip.chip-extern:hover { background: rgba(74,144,217,0.1); }
+.laatste-actie-chip.chip-extern.actief { background: rgba(74,144,217,0.15); font-weight: 600; }
+
+/* ── Tijdlijn ────────────────────────────────────────────── */
+#actie-log-items {
+  position: relative;
+  padding-left: 18px;
+}
+#actie-log-items::before {
+  content: '';
+  position: absolute;
+  left: 5px; top: 8px; bottom: 8px;
+  width: 1px;
+  background: var(--border);
+}
+.tijdlijn-item {
+  position: relative;
+  display: flex; align-items: baseline; gap: 10px;
+  padding: 5px 0; font-size: 12px;
+}
+.tijdlijn-item::before {
+  content: '';
+  position: absolute;
+  left: -16px; top: 7px;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+  flex-shrink: 0;
+}
+.tijdlijn-extern.tijdlijn-item::before { background: #4a90d9; }
+.tijdlijn-datum { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); white-space: nowrap; flex-shrink: 0; }
+.tijdlijn-actie { flex: 1; color: var(--text); }
+.tijdlijn-extern .tijdlijn-actie { color: #4a90d9; }
+
+/* ── Laatste actie op kaart / tabel ─────────────────────── */
+.card-laatste-actie {
+  font-size: 12px; color: var(--text); margin-top: 4px; margin-bottom: 4px;
+  display: flex; align-items: center; gap: 5px;
+}
+.card-actie-datum {
+  font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+  color: var(--muted); margin-left: 4px;
+}
+.proj-laatste-actie { font-size: 12px; color: var(--text); font-weight: 500; }
+
+/* ── Aandacht: inactief type ─────────────────────────────── */
+.aandacht-card-inactief { border-left: 3px solid var(--orange); }
 
 /* ── Empty state ────────────────────────────────────────── */
 .empty-state { padding: 50px 24px; text-align: center; color: var(--muted); font-size: 13px; }
@@ -537,7 +612,15 @@ td { padding: 11px 14px; vertical-align: middle; }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .form-group { display: flex; flex-direction: column; gap: 4px; }
 .form-group.full { grid-column: 1 / -1; }
+.schilder-toggle-row {
+  grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; padding: 6px 0;
+}
+.schilder-toggle-row > label:first-child {
+  font-size: 11px; color: var(--muted); text-transform: uppercase;
+  letter-spacing: 0.08em; font-weight: 500; white-space: nowrap;
+}
 label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; }
+.form-group label { font-size: 12px; text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--muted); }
 input[type=text], input[type=date], input[type=datetime-local], select, textarea {
   background: var(--bg);
   border: 1px solid var(--border);
@@ -551,6 +634,12 @@ input[type=text], input[type=date], input[type=datetime-local], select, textarea
   width: 100%;
   -webkit-appearance: none;
   color-scheme: dark;
+}
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
 }
 input[type=text]:focus, input[type=date]:focus, input[type=datetime-local]:focus, select:focus, textarea:focus { border-color: var(--orange); }
 select option { background: var(--surface2); }
@@ -737,4 +826,160 @@ textarea { resize: vertical; min-height: 56px; }
 .oa-add-btn:hover { background: rgba(var(--orange-rgb),0.25); border-color: var(--orange); }
 
 /* ── Scrollbar ──────────────────────────────────────────── */
-::-webkit-scrollbar
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ── Responsive ─────────────────────────────────────────── */
+@media (max-width: 700px) {
+  .table-wrap { display: none; }
+  .cards { display: flex; }
+  .filter-btns { display: none; }
+  header { padding: 10px 16px; gap: 8px; }
+  .toolbar { padding: 12px 16px; }
+  .main { padding: 14px 16px; }
+  .header-stats { gap: 0; flex-shrink: 0; }
+  .stat { padding: 4px 5px; }
+  .logo { flex-shrink: 0; }
+  .header-tools { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: none; gap: 6px; padding: 2px 0; min-width: 0; }
+  .header-tools::-webkit-scrollbar { display: none; }
+  .wr-btn { flex-shrink: 0; }
+  .loc-list { width: 100%; border-right: none; }
+  #loc-map { display: none; }
+  #view-locaties.active { height: auto; }
+  .loc-body { flex-direction: column; }
+}
+
+@media (min-width: 701px) {
+  .modal-overlay { align-items: center; }
+  .modal { border-radius: 8px; max-width: 540px; }
+  .modal-handle { display: none; }
+}
+
+/* ── Kalender ───────────────────────────────────────────── */
+#view-kalender { padding: 16px 20px; }
+.kal-toolbar {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+}
+.kal-nav-btn {
+  background: none; border: 1px solid var(--border); color: var(--muted);
+  border-radius: 4px; width: 30px; height: 30px; cursor: pointer; font-size: 15px;
+  display: flex; align-items: center; justify-content: center; transition: all .15s;
+  flex-shrink: 0;
+}
+.kal-nav-btn:hover { border-color: var(--orange); color: var(--orange); }
+.kal-titel {
+  font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 600;
+  color: var(--orange); min-width: 160px;
+}
+.kal-vandaag-btn {
+  background: none; border: 1px solid var(--border); color: var(--muted);
+  border-radius: 4px; padding: 4px 12px; cursor: pointer;
+  font-size: 11px; font-family: 'IBM Plex Sans', sans-serif; transition: all .15s;
+}
+.kal-vandaag-btn:hover { border-color: var(--orange); color: var(--orange); }
+.kal-week-headers {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  gap: 4px; margin-bottom: 4px;
+}
+.kal-dag-header {
+  text-align: center; font-size: 10px; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--muted); padding: 5px 0;
+}
+.kal-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+}
+.kal-dag {
+  min-height: 110px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 5px; padding: 8px; overflow: hidden;
+}
+.kal-dag.vandaag { border-color: var(--orange); }
+.kal-dag.ander-maand { opacity: .3; pointer-events: none; }
+.kal-dag-num {
+  font-size: 12px; font-weight: 600; color: var(--muted);
+  margin-bottom: 6px; line-height: 1;
+}
+.kal-dag.vandaag .kal-dag-num {
+  color: var(--orange); background: rgba(var(--orange-rgb),.15);
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%; margin-bottom: 5px;
+}
+.kal-project {
+  display: flex; align-items: flex-start; gap: 5px; padding: 4px 6px;
+  border-radius: 3px; cursor: pointer; margin-bottom: 4px;
+  background: var(--surface2); transition: background .12s;
+}
+.kal-project:hover { background: rgba(var(--orange-rgb),.12); }
+.kal-project-dot {
+  width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 4px;
+}
+.kal-project-text { overflow: hidden; flex: 1; min-width: 0; }
+.kal-project-num {
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600;
+  color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  display: flex; align-items: center; justify-content: space-between; gap: 4px;
+}
+.kal-project-adres {
+  font-size: 10px; color: var(--text); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; opacity: .75; margin-bottom: 1px;
+}
+.kal-project-actie {
+  font-size: 10px; color: var(--muted); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.kal-project-tijd {
+  font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+  color: var(--orange); flex-shrink: 0; margin-top: 0;
+}
+.kal-leeg {
+  grid-column: 1 / -1; text-align: center;
+  font-size: 13px; color: var(--muted); padding: 60px 0;
+}
+
+@media (max-width: 700px) {
+  #view-kalender { padding: 12px 10px; }
+  .kal-dag { min-height: 52px; padding: 4px 3px; }
+  .kal-dag-num { font-size: 10px; }
+  .kal-project-actie, .kal-project-tijd { display: none; }
+  .kal-project { padding: 2px 3px; }
+  .kal-titel { font-size: 13px; min-width: 130px; }
+}
+
+
+
+.tijdlijn-wis {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 0 0 4px;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+.tijdlijn-item:hover .tijdlijn-wis { opacity: 1; }
+.tijdlijn-wis:hover { color: #e74c3c; }
+
+/* ── Modal secties ──────────────────────────────────────── */
+.modal-section {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0 2px;
+}
+.modal-section-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.modal-section-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
