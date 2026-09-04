@@ -375,6 +375,7 @@ header {
 .card:hover { border-color: var(--orange); }
 .card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .card-num { font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 600; color: var(--orange); }
+.num-cw { font-family: 'IBM Plex Mono', monospace; font-weight: 500; color: var(--muted); }
 .card-addr { font-size: 14px; font-weight: 500; margin-bottom: 3px; }
 .card-uitvoerder {
   font-size: 11px; color: var(--orange); font-weight: 500;
