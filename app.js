@@ -772,7 +772,7 @@ function render() {
     tbody.innerHTML = data.map(p => `
       <tr onclick="openModal(${p.id})" data-status="${p.status}">
         <td>
-          <div class="proj-num">${esc(p.nummer)}${p.factuur_projectnummer ? ' <span class="num-cw">· ' + esc(p.factuur_projectnummer) + '</span>' : ''}</div>
+          <div class="proj-num">${esc(p.nummer)}${p.projectnummer ? ' <span class="num-cw">· ' + esc(p.projectnummer) + '</span>' : ''}</div>
           ${p.schilder ? '<span class="schilder-badge">🖌 Schilder</span>' : ''}
         </td>
         <td>
@@ -802,7 +802,7 @@ function render() {
   document.getElementById('cards').innerHTML = data.map(p => `
     <div class="card" onclick="openModal(${p.id})">
       <div class="card-top">
-        <span class="card-num">${esc(p.nummer)}${p.factuur_projectnummer ? ' <span class="num-cw">· ' + esc(p.factuur_projectnummer) + '</span>' : ''}</span>
+        <span class="card-num">${esc(p.nummer)}${p.projectnummer ? ' <span class="num-cw">· ' + esc(p.projectnummer) + '</span>' : ''}</span>
         <div style="display:flex;align-items:center;gap:6px">
           ${p.schilder ? '<span class="schilder-badge">🖌 Schilder</span>' : ''}
           <span class="status-badge ${STATUS_CLASS[p.status]}"><span class="status-dot"></span>${STATUS_LABELS[p.status]}</span>
@@ -878,7 +878,7 @@ function openModal(id) {
     const p = projecten.find(x => x.id === id);
     if (!p) { console.warn('openModal: project niet gevonden voor id', id); return; }
     document.getElementById('f-nummer').value = p.nummer;
-    document.getElementById('f-nummer-cw').textContent = p.factuur_projectnummer ? '· ' + p.factuur_projectnummer : '';
+    document.getElementById('f-nummer-cw').textContent = p.projectnummer ? '· ' + p.projectnummer : '';
     document.getElementById('f-adres').value = p.adres;
     document.getElementById('f-ruimte').value = p.ruimte || '';
     document.getElementById('f-opdrachtgever').value = p.opdrachtgever;
