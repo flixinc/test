@@ -794,6 +794,7 @@ function render() {
           ${p.status === 'klaar' ? '' : `
             <div class="actie-cell">${esc(p.actie) || '—'}</div>
             ${p.datum ? `<div class="actie-date ${dateClass(p.datum)}">${fmt(p.datum)}</div>` : ''}
+            ${p.geplande_datum ? `<div class="actie-date ${dateClass(p.geplande_datum)}">📅 ${fmt(p.geplande_datum)}</div>` : ''}
           `}
         </td>
         <td><div class="proj-client">${fmtCreated(p.created_at)}</div></td>
@@ -814,6 +815,7 @@ function render() {
       ${p.laatste_actie ? '<div class="card-laatste-actie">' + esc(p.laatste_actie) + (p.laatste_actie_datum ? ' <span class="card-actie-datum">' + fmt(p.laatste_actie_datum) + '</span>' : '') + '</div>' : ''}
       ${p.notitie ? `<div class="card-actie" style="color:var(--muted);font-size:12px;margin-bottom:6px">${esc(p.notitie.substring(0,80))}…</div>` : ''}
       ${p.status !== 'klaar' && p.actie ? `<div class="card-actie">${esc(p.actie)}</div>` : ''}
+      ${p.status !== 'klaar' && p.geplande_datum ? `<div class="card-actie" style="font-size:12px">📅 Gepland: ${fmt(p.geplande_datum)}</div>` : ''}
       ${(p.status !== 'klaar' && p.datum) || p.ruimte ? `<div class="card-footer">
         ${p.status !== 'klaar' && p.datum ? `<span class="card-date ${dateClass(p.datum)}">${fmt(p.datum)}</span>` : '<span></span>'}
         ${p.ruimte ? `<span class="card-ruimte">${esc(p.ruimte)}</span>` : ''}
@@ -886,6 +888,7 @@ function openModal(id) {
     onStatusChange(p.status);
     document.getElementById('f-actie').value = p.actie || '';
     document.getElementById('f-datum').value = p.datum || '';
+    document.getElementById('f-geplande-datum').value = p.geplande_datum || '';
     document.getElementById('f-contact').value = p.contact || '';
     document.getElementById('f-aanmelder').value = p.aanmelder || '';
     document.getElementById('f-notitie').value = p.notitie || '';
@@ -915,6 +918,7 @@ function openModal(id) {
     document.getElementById('f-status').value = 'lopend';
     onStatusChange('lopend');
     document.getElementById('f-datum').value = '';
+    document.getElementById('f-geplande-datum').value = '';
     const bonTekst = document.getElementById('bon-tekst'); if (bonTekst) bonTekst.value = '';
     renderActieLog([]);
     document.querySelectorAll('.actie-chip').forEach(c => c.classList.remove('selected'));
@@ -1186,6 +1190,7 @@ async function saveProject() {
     status:        document.getElementById('f-status').value,
     actie:         document.getElementById('f-actie').value.trim(),
     datum:         document.getElementById('f-datum').value,
+    geplande_datum: document.getElementById('f-geplande-datum').value || null,
     contact:       document.getElementById('f-contact').value.trim(),
     aanmelder:     document.getElementById('f-aanmelder').value.trim(),
     notitie:       document.getElementById('f-notitie').value.trim(),
