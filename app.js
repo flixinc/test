@@ -354,6 +354,8 @@ function getAandacht() {
   const result = [];
   const idsInLijst = new Set();
   const voegToe = (p, extra) => { result.push({ ...p, ...extra }); idsInLijst.add(p.id); };
+  // "Wacht tot": zolang die datum niet bereikt is, blijft het project uit de lijst.
+  const slaapt = p => !!p.wacht_tot && new Date(p.wacht_tot) > today;
 
   // 1. Nieuw binnen: status 'controleren' — moet nagekeken worden (bovenaan)
   projecten.forEach(p => {
@@ -363,7 +365,7 @@ function getAandacht() {
 
   // 2. Wacht verstreken: wacht-status met geplande datum in het verleden
   projecten.forEach(p => {
-    if (idsInLijst.has(p.id)) return;
+    if (idsInLijst.has(p.id) || slaapt(p)) return;
     if (p.status && p.status.startsWith('wacht') && p.datum && new Date(p.datum) < today) {
       voegToe(p, { _aandachtType: 'wacht' });
     }
@@ -373,7 +375,7 @@ function getAandacht() {
   //    bijgewerkt. Gemeten op 'updated_at' (door de database automatisch bijgewerkt bij
   //    elke opslag/wijziging/actie). Zo tellen ALLE open projecten betrouwbaar mee.
   projecten.forEach(p => {
-    if (idsInLijst.has(p.id)) return;
+    if (idsInLijst.has(p.id) || slaapt(p)) return;
     if (p.status === 'klaar') return;
     const ref = p.updated_at || p.created_at;
     if (!ref) return;
@@ -385,7 +387,7 @@ function getAandacht() {
 
   // 4. Extern te lang open: externe aanvragen >= 14 dagen zonder reactie
   projecten.forEach(p => {
-    if (idsInLijst.has(p.id)) return;
+    if (idsInLijst.has(p.id) || slaapt(p)) return;
     const aanvragen = Array.isArray(p.extern_aanvragen) ? p.extern_aanvragen : [];
     const openstaand = aanvragen.filter(a => {
       if (!a.datum_gevraagd || a.ontvangen) return false;
@@ -889,6 +891,7 @@ function openModal(id) {
     document.getElementById('f-actie').value = p.actie || '';
     document.getElementById('f-datum').value = p.datum || '';
     document.getElementById('f-geplande-datum').value = p.geplande_datum || '';
+    document.getElementById('f-wacht-tot').value = p.wacht_tot || '';
     document.getElementById('f-contact').value = p.contact || '';
     document.getElementById('f-aanmelder').value = p.aanmelder || '';
     document.getElementById('f-notitie').value = p.notitie || '';
@@ -919,6 +922,7 @@ function openModal(id) {
     onStatusChange('lopend');
     document.getElementById('f-datum').value = '';
     document.getElementById('f-geplande-datum').value = '';
+    document.getElementById('f-wacht-tot').value = '';
     const bonTekst = document.getElementById('bon-tekst'); if (bonTekst) bonTekst.value = '';
     renderActieLog([]);
     document.querySelectorAll('.actie-chip').forEach(c => c.classList.remove('selected'));
@@ -1191,6 +1195,7 @@ async function saveProject() {
     actie:         document.getElementById('f-actie').value.trim(),
     datum:         document.getElementById('f-datum').value,
     geplande_datum: document.getElementById('f-geplande-datum').value || null,
+    wacht_tot:     document.getElementById('f-wacht-tot').value || null,
     contact:       document.getElementById('f-contact').value.trim(),
     aanmelder:     document.getElementById('f-aanmelder').value.trim(),
     notitie:       document.getElementById('f-notitie').value.trim(),
