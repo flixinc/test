@@ -355,7 +355,9 @@ function getAandacht() {
   const idsInLijst = new Set();
   const voegToe = (p, extra) => { result.push({ ...p, ...extra }); idsInLijst.add(p.id); };
   // "Wacht tot": zolang die datum niet bereikt is, blijft het project uit de lijst.
-  const slaapt = p => !!p.wacht_tot && new Date(p.wacht_tot) > today;
+  // Lokale middernacht, niet new Date('JJJJ-MM-DD') (= UTC): anders blijft het project op de
+  // ingestelde dag zelf nog verborgen en komt het pas een dag later terug.
+  const slaapt = p => !!p.wacht_tot && new Date(p.wacht_tot + 'T00:00:00') > today;
 
   // 1. Nieuw binnen: status 'controleren' — moet nagekeken worden (bovenaan)
   projecten.forEach(p => {
