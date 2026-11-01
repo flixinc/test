@@ -67,7 +67,9 @@ let sortDir = 1;
 let onderaannemers = [];
 let medewerkers = [];
 let projectMedewerkerIds = [];
-let apiKey = localStorage.getItem('compier_api_key') || '';
+// De Claude-sleutel staat niet meer in de browser: bonnen worden via Make + Supabase
+// uitgelezen. Een eerder op dit apparaat bewaarde sleutel wordt hier gewist.
+try { localStorage.removeItem('compier_api_key'); } catch (e) {}
 let sbUrl  = localStorage.getItem('compier_sb_url') || '';
 let sbKey  = localStorage.getItem('compier_sb_key') || '';
 
@@ -247,7 +249,6 @@ async function verwijderUitDb(id) {
 
 // ── Instellingen banner ───────────────────────────────────
 function initApiKey() {
-  if (apiKey) document.getElementById('api-key-input').value = apiKey;
   if (sbUrl)  document.getElementById('sb-url-input').value = sbUrl;
   if (sbKey)  document.getElementById('sb-key-input').value = sbKey;
   updateApiStatus();
@@ -256,13 +257,12 @@ function initApiKey() {
 
 function updateApiStatus() {
   const s = document.getElementById('api-status');
-  if (apiKey && sbUrl && sbKey) { s.textContent = '✓ Alles ingesteld'; s.className = 'api-status'; }
-  else if (apiKey) { s.textContent = '⚠ Supabase ontbreekt'; s.className = 'api-status missing'; }
+  if (sbUrl && sbKey) { s.textContent = '✓ Alles ingesteld'; s.className = 'api-status'; }
   else { s.textContent = 'Niet ingesteld'; s.className = 'api-status missing'; }
 }
 
 function collapseBannerIfComplete() {
-  const allesOk = apiKey && sbUrl && sbKey;
+  const allesOk = sbUrl && sbKey;
   document.querySelector('.api-banner').classList.toggle('collapsed', allesOk);
 }
 
@@ -271,79 +271,13 @@ function toggleApiBanner() {
 }
 
 function saveApiKey() {
-  apiKey = document.getElementById('api-key-input').value.trim();
   sbUrl  = document.getElementById('sb-url-input').value.trim().replace(/\/+$/, '');
   sbKey  = document.getElementById('sb-key-input').value.trim();
-  localStorage.setItem('compier_api_key', apiKey);
   localStorage.setItem('compier_sb_url', sbUrl);
   localStorage.setItem('compier_sb_key', sbKey);
   updateApiStatus();
   collapseBannerIfComplete();
   if (sbUrl && sbKey) laadProjecten();
-}
-
-// ── AI Bon uitlezen ───────────────────────────────────────
-async function uitLezenBon() {
-  const tekst = document.getElementById('bon-tekst').value.trim();
-  if (!tekst) { alert('Plak eerst de tekst van de bon.'); return; }
-  if (!apiKey) { alert('Vul eerst je API key in bovenaan de pagina.'); return; }
-  const btn = document.querySelector('.btn-uitlezen');
-  btn.disabled = true;
-  document.getElementById('ai-loading').classList.add('show');
-  const resultEl = document.getElementById('ai-result');
-  resultEl.className = 'ai-result';
-  try {
-    const response = await fetch('https://damp-surf-e962compier-proxy.rayflix.workers.dev', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 700,
-        messages: [{
-          role: 'user',
-          content: `Dit is een Nederlandse opdrachtbon of offerte-aanvraag van Compier O&A. Extraheer de volgende velden en geef ALLEEN een geldig JSON-object terug, geen uitleg, geen markdown.
-Velden:
-- nummer: kenmerk of referentienummer (bijv. "M2603 0024"), of leeg als niet aanwezig
-- adres: volledig werklocatie-adres (straat + huisnummer + postcode + plaats)
-- ruimte: ruimtenummer zoals letterlijk vermeld in de bon, vaak aangeduid als "ruimtenummer", "ruimte", "lokaal" of "kamer" (bijv. "3.12", "hal 2e verdieping"). Geef de exacte waarde terug, of leeg als niet aanwezig. BELANGRIJK: verwerk het ruimtenummer ALLEEN hier, nooit in omschrijving
-- opdrachtgever: de organisatie die de opdracht verleent aan Compier. Dit is NOOIT Compier zelf. Kijk naar de afzender, de ondertekening of de organisatienaam bij het adres van de opdrachtgever. Gebruik de overkoepelende naam, niet een afdeling zoals 'Servicedesk Facilitair'.
-- contact: de naam die onder "Met vriendelijke groet" staat (de ondertekenaar) plus diens telefoonnummer, formaat "Naam — telefoonnummer"
-- aanmelder: de contactpersoon op de werklocatie (bijv. vermeld als "Naam aanmelder" of "contactpersoon ter plaatse"), formaat "Naam — telefoonnummer"
-- omschrijving: volledige omschrijving van de werkzaamheden of gevraagde offerte, max 400 tekens. Vermeld hier GEEN ruimtenummer (dat gaat in het ruimte-veld)
-- status: bepaal zelf op basis van de tekst: "offerte" als het een prijsaanvraag of offerteverzoek is, "lopend" als het een opdracht of werkopdracht is
-- schilder: true als de werkzaamheden (deels) schilderwerk betreffen (verven, schilderen, lakken, coating, behangen) of als er RAL-kleurnummers worden genoemd (bijv. RAL 9010), anders false
-Tekst:
-${tekst.substring(0, 4000)}`
-        }]
-      })
-    });
-    const data = await response.json();
-    if (data.error) throw new Error(data.error.message);
-    const raw    = data.content[0].text.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(raw);
-    const geldig = ['offerte','lopend','wacht','wacht-reactie','wacht-akkoord','klaar'];
-    if (parsed.status && geldig.includes(parsed.status)) document.getElementById('f-status').value = parsed.status;
-    if (parsed.nummer)        document.getElementById('f-nummer').value = parsed.nummer;
-    if (parsed.adres)         document.getElementById('f-adres').value = parsed.adres;
-    if (parsed.ruimte)        document.getElementById('f-ruimte').value = parsed.ruimte;
-    if (parsed.opdrachtgever) document.getElementById('f-opdrachtgever').value = parsed.opdrachtgever;
-    if (parsed.contact)       document.getElementById('f-contact').value = parsed.contact;
-    if (parsed.aanmelder)     document.getElementById('f-aanmelder').value = parsed.aanmelder;
-    if (parsed.omschrijving)  document.getElementById('f-notitie').value = parsed.omschrijving;
-    if (parsed.schilder === true) document.getElementById('f-schilder').checked = true;
-    resultEl.textContent = `✓ Uitgelezen: ${parsed.nummer || '?'} — ${parsed.adres || '?'}`;
-    resultEl.className = 'ai-result show';
-  } catch(err) {
-    resultEl.textContent = 'Fout bij uitlezen: ' + err.message;
-    resultEl.className = 'ai-result show error';
-  } finally {
-    document.getElementById('ai-loading').classList.remove('show');
-    btn.disabled = false;
-  }
 }
 
 // ── Filter & render helpers ───────────────────────────────
@@ -874,12 +808,9 @@ function clearSearch() {
 function openModal(id) {
   editingId = id || null;
   const isNew = !id;
-  document.getElementById('upload-section').style.display = isNew ? 'block' : 'none';
   document.getElementById('modal-title').textContent = isNew ? 'NIEUWE OPDRACHT' : 'OPDRACHT BEWERKEN';
   document.getElementById('btn-delete').style.display = isNew ? 'none' : 'block';
   document.getElementById('btn-deel').style.display   = isNew ? 'none' : 'block';
-  document.getElementById('ai-result').className = 'ai-result';
-  document.getElementById('ai-loading').classList.remove('show');
   if (id) {
     const p = projecten.find(x => x.id === id);
     if (!p) { console.warn('openModal: project niet gevonden voor id', id); return; }
@@ -925,7 +856,6 @@ function openModal(id) {
     document.getElementById('f-datum').value = '';
     document.getElementById('f-geplande-datum').value = '';
     document.getElementById('f-wacht-tot').value = '';
-    const bonTekst = document.getElementById('bon-tekst'); if (bonTekst) bonTekst.value = '';
     renderActieLog([]);
     document.querySelectorAll('.actie-chip').forEach(c => c.classList.remove('selected'));
     toonLogo('');

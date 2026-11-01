@@ -168,9 +168,7 @@
 
 <!-- ── Instellingen banner ───────────────────────────────── -->
 <div class="api-banner">
-  <label>Claude</label>
-  <input type="password" id="api-key-input" placeholder="sk-ant-…" autocomplete="off">
-  <label style="margin-left:8px">Supabase URL</label>
+  <label>Supabase URL</label>
   <input type="text" id="sb-url-input" placeholder="https://xyz.supabase.co" autocomplete="off" style="min-width:200px">
   <label style="margin-left:8px">Supabase Key</label>
   <input type="password" id="sb-key-input" placeholder="eyJ…" autocomplete="off">
@@ -313,17 +311,6 @@
     <div class="modal-handle"></div>
     <div class="modal-logo" id="modal-logo" style="display:none"><img id="modal-logo-img" src="" alt=""></div>
     <div class="modal-title" id="modal-title">NIEUWE OPDRACHT</div>
-
-    <!-- Bon uitlezen (alleen bij nieuw project) -->
-    <div id="upload-section">
-      <div class="form-group full" style="margin-bottom:12px">
-        <label>Plak tekst van de opdrachtbon</label>
-        <textarea id="bon-tekst" rows="6" placeholder="Kopieer de inhoud van de opdrachtbon hier en klik op Uitlezen…"></textarea>
-      </div>
-      <button class="btn-uitlezen" onclick="uitLezenBon()">⚡ Uitlezen</button>
-      <div class="ai-loading" id="ai-loading"><div class="spinner"></div><span>Bon wordt uitgelezen…</span></div>
-      <div class="ai-result" id="ai-result"></div>
-    </div>
 
     <!-- Formuliervelden -->
     <div class="form-grid">
