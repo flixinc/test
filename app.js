@@ -1808,15 +1808,25 @@ function renderKalender() {
   const dagenInMaand     = new Date(kalJaar, kalMaand + 1, 0).getDate();
   const dagenVorigeMaand = new Date(kalJaar, kalMaand, 0).getDate();
 
-  // Projecten met datum in deze maand per dag clusteren
+  // Per dag clusteren: de datum van de volgende actie ('actie') én de geplande
+  // uitvoerdatum ('uitvoer' — dezelfde datum als in de iOS-agenda). Vallen beide op
+  // dezelfde dag, dan telt alleen de uitvoerdatum.
   const perDag = {};
+  const zetOp = (p, dag, soort) => {
+    if (!perDag[dag]) perDag[dag] = [];
+    const bestaand = perDag[dag].find(x => x.p.id === p.id);
+    if (bestaand) { if (soort === 'uitvoer') bestaand.soort = 'uitvoer'; return; }
+    perDag[dag].push({ p, soort });
+  };
   projecten.forEach(p => {
-    if (!p.datum) return;
-    const d = new Date(p.datum);
-    if (d.getFullYear() === kalJaar && d.getMonth() === kalMaand) {
-      const dag = d.getDate();
-      if (!perDag[dag]) perDag[dag] = [];
-      perDag[dag].push(p);
+    if (p.datum) {
+      const d = new Date(p.datum);
+      if (d.getFullYear() === kalJaar && d.getMonth() === kalMaand) zetOp(p, d.getDate(), 'actie');
+    }
+    if (p.geplande_datum) {
+      // 'JJJJ-MM-DD' als losse getallen lezen, niet via new Date() (= UTC, kan een dag verschuiven)
+      const [j, m, dd] = String(p.geplande_datum).slice(0, 10).split('-').map(Number);
+      if (j === kalJaar && m - 1 === kalMaand) zetOp(p, dd, 'uitvoer');
     }
   });
 
@@ -1836,15 +1846,18 @@ function renderKalender() {
       .filter(Boolean).join(' ');
     const dagProjecten   = (!isVorig && !isVolgend) ? (perDag[dagNr] || []) : [];
 
-    const projectHtml = dagProjecten.map(p => {
-      const tijd = p.datum?.includes('T') ? p.datum.slice(11, 16) : '';
+    const projectHtml = dagProjecten.map(({ p, soort }) => {
+      const tijd = soort === 'actie' && p.datum?.includes('T') ? p.datum.slice(11, 16) : '';
       const kleur = KAL_STATUS_KLEUR[p.status] || '#666';
-      return `<div class="kal-project" onclick="event.stopPropagation();openModal(${p.id})">
+      const label = soort === 'uitvoer'
+        ? '<span class="kal-project-tijd">Uitvoering</span>'
+        : (tijd ? '<span class="kal-project-tijd">' + esc(tijd) + '</span>' : '');
+      return `<div class="kal-project${soort === 'uitvoer' ? ' kal-gepland' : ''}" onclick="event.stopPropagation();openModal(${p.id})">
         <div class="kal-project-dot" style="background:${kleur}"></div>
         <div class="kal-project-text">
-          <div class="kal-project-num">${p.nummer + (tijd ? '<span class="kal-project-tijd">' + tijd + '</span>' : '')}</div>
-          ${p.adres ? '<div class="kal-project-adres">' + p.adres + '</div>' : ''}
-          ${p.actie ? '<div class="kal-project-actie">' + p.actie + '</div>' : ''}
+          <div class="kal-project-num">${esc(p.nummer)}${label}</div>
+          ${p.adres ? '<div class="kal-project-adres">' + esc(p.adres) + '</div>' : ''}
+          ${p.actie ? '<div class="kal-project-actie">' + esc(p.actie) + '</div>' : ''}
         </div>
       </div>`;
     }).join('');

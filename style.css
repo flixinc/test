@@ -911,6 +911,8 @@ textarea { resize: vertical; min-height: 56px; }
   background: var(--surface2); transition: background .12s;
 }
 .kal-project:hover { background: rgba(var(--orange-rgb),.12); }
+/* geplande uitvoerdatum (komt ook in de iOS-agenda): oranje streep links */
+.kal-project.kal-gepland { box-shadow: inset 2px 0 0 var(--orange); }
 .kal-project-dot {
   width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 4px;
 }
